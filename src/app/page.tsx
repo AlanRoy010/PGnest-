@@ -7,7 +7,7 @@ export default function HomePage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
         <span className="font-display text-2xl font-semibold text-[#1c1917]">
-          PG<span className="text-[#ea6c0a]">Nest</span>
+          PG<span className="text-[#ea6c0a]">Owns</span>
         </span>
         <div className="flex items-center gap-3">
           <Link
@@ -84,7 +84,7 @@ export default function HomePage() {
       {/* Features */}
       <section className="max-w-6xl mx-auto px-6 py-20">
         <h2 className="font-display text-3xl font-semibold text-[#1c1917] mb-3">
-          Why PGNest?
+          Why PG Owns?
         </h2>
         <p className="text-[#78716c] mb-12">Everything you need, nothing you don&apos;t.</p>
 
@@ -178,9 +178,9 @@ export default function HomePage() {
       <footer className="border-t border-[#e7e5e4]">
         <div className="max-w-6xl mx-auto px-6 py-8 flex items-center justify-between">
           <span className="font-display text-lg font-semibold text-[#1c1917]">
-            PG<span className="text-[#ea6c0a]">Nest</span>
+            PG<span className="text-[#ea6c0a]">Owns</span>
           </span>
-          <p className="text-xs text-[#a8a29e]">© 2024 PGNest. Built for Mumbai.</p>
+          <p className="text-xs text-[#a8a29e]">© 2024 PG Owns. Built for Mumbai.</p>
         </div>
       </footer>
     </div>

@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
     // Email to visitor
     await resend.emails.send({
-      from: "PGNest <onboarding@resend.dev>",
+      from: "PG Owns <onboarding@resend.dev>",
       to: email,
       subject: `Visit confirmed — ${listing_title}`,
       html: `
@@ -73,14 +73,14 @@ export async function POST(request: Request) {
             <p style="color: #57534e; margin: 6px 0;">🕐 ${visit_time}</p>
           </div>
           <p style="color: #57534e;">Our team will share the exact address before your visit. If you need to reschedule, please contact us.</p>
-          <p style="color: #a8a29e; font-size: 12px; margin-top: 32px;">— Team PGNest</p>
+          <p style="color: #a8a29e; font-size: 12px; margin-top: 32px;">— Team PG Owns</p>
         </div>
       `,
     });
 
     // Email to admin
     await resend.emails.send({
-      from: "PGNest <onboarding@resend.dev>",
+      from: "PG Owns <onboarding@resend.dev>",
       to: process.env.ADMIN_EMAIL!,
       subject: `New visit — ${listing_title} — ${formattedDate} ${visit_time}`,
       html: `

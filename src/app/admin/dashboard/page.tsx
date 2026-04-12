@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
           Dashboard
         </h1>
         <p className="text-sm text-[#78716c] mt-0.5">
-          Welcome back, here&apos;s what&apos;s happening on PGNest
+          Welcome back, here&apos;s what&apos;s happening on PG Owns
         </p>
       </div>
 

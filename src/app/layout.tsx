@@ -3,7 +3,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-  title: "PGNest — Find Your Perfect PG in Mumbai",
+  title: "PG Owns — Find Your Perfect PG in Mumbai",
   description: "The smartest way to find and manage PG accommodations in Mumbai. Transparent deposit tracking, secure payments, and verified listings.",
   keywords: "PG Mumbai, paying guest Mumbai, PG accommodation, student housing Mumbai",
 };

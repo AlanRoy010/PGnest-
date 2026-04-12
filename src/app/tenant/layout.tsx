@@ -56,7 +56,7 @@ export default function TenantLayout({
             href="/"
             className="font-display text-xl font-semibold text-[#1c1917]"
           >
-            PG<span className="text-[#ea6c0a]">Nest</span>
+            PG<span className="text-[#ea6c0a]">Owns</span>
           </Link>
           <div className="mt-0.5 text-xs text-[#a8a29e]">Tenant Dashboard</div>
         </div>
@@ -143,7 +143,7 @@ export default function TenantLayout({
             href="/"
             className="font-display text-lg font-semibold text-[#1c1917]"
           >
-            PG<span className="text-[#ea6c0a]">Nest</span>
+            PG<span className="text-[#ea6c0a]">Owns</span>
           </Link>
           <button
             onClick={() => setMobileOpen(true)}

@@ -49,7 +49,7 @@ export default function AdminLayout({
         {/* Logo */}
         <div className="px-6 py-5 border-b border-[#292524]">
           <Link href="/" className="font-display text-xl font-semibold text-white">
-            PG<span className="text-[#ea6c0a]">Nest</span>
+            PG<span className="text-[#ea6c0a]">Owns</span>
           </Link>
           <div className="mt-0.5 text-xs text-[#78716c]">Admin Panel</div>
         </div>
@@ -133,7 +133,7 @@ export default function AdminLayout({
       <div className="flex-1 md:ml-56 flex flex-col min-h-screen">
         <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#1c1917] border-b border-[#292524]">
           <Link href="/" className="font-display text-lg font-semibold text-white">
-            PG<span className="text-[#ea6c0a]">Nest</span>
+            PG<span className="text-[#ea6c0a]">Owns</span>
           </Link>
           <button onClick={() => setMobileOpen(true)} className="p-2 text-[#a8a29e]">
             <Menu className="w-5 h-5" />

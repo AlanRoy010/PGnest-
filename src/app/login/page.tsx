@@ -48,7 +48,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#fafaf9] flex flex-col">
       <nav className="px-6 py-4">
         <Link href="/" className="font-display text-2xl font-semibold text-[#1c1917]">
-          PG<span className="text-[#ea6c0a]">Nest</span>
+          PG<span className="text-[#ea6c0a]">Owns</span>
         </Link>
       </nav>
 
@@ -107,7 +107,7 @@ export default function LoginPage() {
 
             <div className="mt-6 pt-6 border-t border-[#f5f5f4] text-center">
               <p className="text-sm text-[#78716c]">
-                New to PGNest?{" "}
+                New to PG Owns?{" "}
                 <Link href="/signup" className="text-[#ea6c0a] font-medium hover:underline">
                   Create account
                 </Link>

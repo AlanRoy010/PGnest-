@@ -54,7 +54,7 @@ export default function OwnerLayout({
         {/* Logo */}
         <div className="px-6 py-5 border-b border-[#e7e5e4]">
           <Link href="/" className="font-display text-xl font-semibold text-[#1c1917]">
-            PG<span className="text-[#ea6c0a]">Nest</span>
+            PG<span className="text-[#ea6c0a]">Owns</span>
           </Link>
           <div className="mt-0.5 text-xs text-[#a8a29e]">Owner Dashboard</div>
         </div>
@@ -136,7 +136,7 @@ export default function OwnerLayout({
             href="/"
             className="font-display text-lg font-semibold text-[#1c1917]"
           >
-            PG<span className="text-[#ea6c0a]">Nest</span>
+            PG<span className="text-[#ea6c0a]">Owns</span>
           </Link>
           <button
             onClick={() => setMobileOpen(true)}
