@@ -321,7 +321,7 @@ export default function ListingDetailPage() {
                   <CheckCircle className="w-8 h-8 text-green-500" />
                 </div>
                 <h3 className="font-display text-xl font-semibold text-[#1c1917] mb-2">
-                  You're all set!
+                  You&apos;re all set!
                 </h3>
                 <p className="text-sm text-[#78716c] mb-3">
                   Your visit to <strong>{listing.title}</strong> is booked for

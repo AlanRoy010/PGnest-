@@ -86,7 +86,7 @@ export default function HomePage() {
         <h2 className="font-display text-3xl font-semibold text-[#1c1917] mb-3">
           Why PGNest?
         </h2>
-        <p className="text-[#78716c] mb-12">Everything you need, nothing you don't.</p>
+        <p className="text-[#78716c] mb-12">Everything you need, nothing you don&apos;t.</p>
 
         <div className="grid md:grid-cols-3 gap-6">
           {[

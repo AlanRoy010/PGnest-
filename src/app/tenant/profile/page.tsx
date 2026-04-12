@@ -9,7 +9,7 @@ import type { Profile } from "@/types";
 
 export default function ProfilePage() {
   const supabase = useMemo(() => createClient(), []);
-  const { profile: hookProfile, email: hookEmail, loading } = useUser();
+  const { profile: hookProfile, email: hookEmail } = useUser();
 
   // Keep a local copy so the page reflects saves immediately without reload
   const [localProfile, setLocalProfile] = useState<Profile | null>(null);

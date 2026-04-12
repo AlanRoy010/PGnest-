@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Home, BookOpen, Shield, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -21,7 +21,6 @@ export default function OwnerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { profile } = useUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
@@ -40,7 +39,7 @@ export default function OwnerLayout({
           setTimeout(() => reject(new Error("timeout")), 3000)
         ),
       ]);
-    } catch (e) {
+    } catch {
       console.log("SignOut timed out, clearing locally");
     }
 
@@ -161,7 +160,7 @@ export default function OwnerLayout({
               Sign out?
             </h2>
             <p className="text-sm text-[#78716c] mb-6">
-              You'll need to sign in again to access your dashboard.
+              You&apos;ll need to sign in again to access your dashboard.
             </p>
             <div className="flex gap-3">
               <button

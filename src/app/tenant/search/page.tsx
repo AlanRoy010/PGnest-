@@ -4,20 +4,12 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, AMENITY_LABELS, AREAS_MUMBAI } from "@/lib/utils";
 import {
-  Search, MapPin, Filter, X, Wifi, Wind,
-  UtensilsCrossed, Car, Loader2, SlidersHorizontal,
+  Search, MapPin, X, Loader2, SlidersHorizontal,
 } from "lucide-react";
 import type { Listing } from "@/types";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-
-const AMENITY_ICONS: Record<string, any> = {
-  wifi: Wifi,
-  ac: Wind,
-  meals: UtensilsCrossed,
-  parking: Car,
-};
 
 function SearchPage() {
   const supabase = createClient();

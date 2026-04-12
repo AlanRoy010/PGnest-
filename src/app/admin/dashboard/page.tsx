@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Users, Home, BookOpen, TrendingUp } from "lucide-react";
 
 export default function AdminDashboardPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalListings: 0,
@@ -31,7 +31,7 @@ export default function AdminDashboardPage() {
     };
 
     fetchStats();
-  }, []);
+  }, [supabase]);
 
   const cards = [
     { label: "Total Users",      value: stats.totalUsers,    icon: Users,      color: "bg-blue-50 text-blue-600" },
@@ -47,7 +47,7 @@ export default function AdminDashboardPage() {
           Dashboard
         </h1>
         <p className="text-sm text-[#78716c] mt-0.5">
-          Welcome back, here's what's happening on PGNest
+          Welcome back, here&apos;s what&apos;s happening on PGNest
         </p>
       </div>
 

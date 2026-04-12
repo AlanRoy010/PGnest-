@@ -9,7 +9,7 @@ import type { Profile } from "@/types";
 
 export default function AdminProfilePage() {
   const supabase = useMemo(() => createClient(), []);
-  const { profile: hookProfile, email: hookEmail, loading } = useUser();
+  const { profile: hookProfile, email: hookEmail } = useUser();
 
   const [localProfile, setLocalProfile] = useState<Profile | null>(null);
   const [authEmail, setAuthEmail] = useState("");

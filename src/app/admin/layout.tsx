@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { LayoutDashboard, Home, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -20,7 +20,6 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { profile, email } = useUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
@@ -36,7 +35,7 @@ export default function AdminLayout({
           setTimeout(() => reject(new Error("timeout")), 3000)
         ),
       ]);
-    } catch (e) {
+    } catch {
       console.log("SignOut timed out");
     }
     setShowSignOutModal(false);
@@ -154,7 +153,7 @@ export default function AdminLayout({
               Sign out?
             </h2>
             <p className="text-sm text-[#78716c] mb-6">
-              You'll need to sign in again to access the admin panel.
+              You&apos;ll need to sign in again to access the admin panel.
             </p>
             <div className="flex gap-3">
               <button

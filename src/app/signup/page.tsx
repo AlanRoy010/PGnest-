@@ -28,7 +28,7 @@ function SignupForm() {
     if (password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
 
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {

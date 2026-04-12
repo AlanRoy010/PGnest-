@@ -134,7 +134,7 @@ export default function AdminListingsPage() {
       if (path) {
         await supabase.storage.from("listing-photos").remove([`listings/${path.split("listings/")[1]}`]);
       }
-    } catch (e) {
+    } catch {
       // If deletion from storage fails, still remove from UI
     }
     setPhotos((prev) => prev.filter((_, i) => i !== index));
