@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
     // Email to visitor
     await resend.emails.send({
-      from: "PG Owns <onboarding@resend.dev>",
+      from: "PG Owns <noreply@pgowns.in>",
       to: email,
       subject: `Visit confirmed — ${listing_title}`,
       html: `
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
 
     // Email to admin
     await resend.emails.send({
-      from: "PG Owns <onboarding@resend.dev>",
+      from: "PG Owns <noreply@pgowns.in>",
       to: process.env.ADMIN_EMAIL!,
       subject: `New visit — ${listing_title} — ${formattedDate} ${visit_time}`,
       html: `

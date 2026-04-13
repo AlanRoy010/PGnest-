@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PGNest is a Mumbai-focused PG (paying guest) accommodation platform built with Next.js 14, Supabase, and Razorpay. It supports three user roles — tenant, owner, and admin — each with a separate dashboard and enforced via middleware + Supabase RLS.
+PGOwns (package name: `pgnest`) is a Mumbai-focused PG (paying guest) accommodation platform built with Next.js 14, Supabase, and Razorpay. It supports three user roles — tenant, owner, and admin — each with a separate dashboard and enforced via middleware + Supabase RLS.
 
 ## Commands
 
@@ -21,8 +21,10 @@ No test suite is currently configured.
 
 ### Auth & Role Enforcement
 
-- `src/middleware.ts` protects `/owner/*`, `/tenant/*`, `/admin/*` routes. Unauthenticated users are redirected to `/login`. Admin routes check the `profiles.role` column.
+- `src/middleware.ts` protects `/owner/*`, `/tenant/*`, `/admin/*` routes. Unauthenticated users are redirected to `/login`. Admin routes additionally check `profiles.role` — non-admins are redirected to `/`. Owner/tenant routes are auth-gated only (no cross-role enforcement in middleware).
 - `src/hooks/useUser.ts` — client-side hook that subscribes to Supabase auth state changes and fetches the user's profile. Returns `{ profile, loading, isOwner, isTenant, isAdmin }`.
+- Signup is a two-step flow: step 1 collects name/email/password/role and calls `supabase.auth.signUp()`; step 2 verifies a 6-digit OTP via `supabase.auth.verifyOtp({ type: "signup" })`. Role is passed as `options.data.role` at signup and picked up by the DB trigger that creates the profile.
+- `src/app/auth/callback/route.ts` handles both email OTP (`token_hash`) and OAuth code exchanges, then redirects based on `profiles.role`.
 
 ### Supabase Clients
 
@@ -77,6 +79,14 @@ All shared TypeScript types are in `src/types/index.ts` — enums for status val
 - `AMENITY_LABELS` — display names for amenity keys
 - `AREAS_MUMBAI` — 28 Mumbai area names for filters
 - `BOOKING_STATUS_CONFIG` / `DEDUCTION_STATUS_CONFIG` — color configs for status badges
+
+### UI Libraries
+
+- **Radix UI** — unstyled primitives (Avatar, Dialog, DropdownMenu, Select, Switch, Tabs, etc.)
+- **react-hook-form + zod** — forms and validation
+- **sonner** — toast notifications (`toast.success()`, `toast.error()`)
+- **lucide-react** — icons
+- **date-fns** — date formatting
 
 ### Styling
 
