@@ -13,16 +13,13 @@ export default function SignupPage() {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
-  // Step 1 state
   const [step, setStep] = useState<1 | 2>(1);
   const [role, setRole] = useState<Role>("tenant");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  // Step 2 state
   const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
 
   const handleSignUp = async () => {
@@ -31,45 +28,76 @@ export default function SignupPage() {
     if (password.length < 6) { toast.error("Password must be at least 6 characters"); return; }
 
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName.trim(), role },
-      },
-    });
-    setLoading(false);
+    try {
+      // Create the Supabase auth user (email confirm disabled in dashboard)
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: fullName.trim(), role },
+          emailRedirectTo: undefined,
+        },
+      });
 
-    if (error) { toast.error(error.message); return; }
-    toast.success("OTP sent to your email!");
-    setStep(2);
+      if (signUpError) { toast.error(signUpError.message); return; }
+
+      // Send our custom OTP via Resend
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const result = await res.json();
+
+      if (!result.success) { toast.error(result.error || "Failed to send OTP"); return; }
+
+      toast.success("OTP sent to your email!");
+      setStep(2);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerify = async () => {
     if (otp.length !== 6) { toast.error("Enter the 6-digit code"); return; }
 
     setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: "signup",
-    });
-    setLoading(false);
+    try {
+      // Verify OTP against our table
+      const res = await fetch("/api/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, otp }),
+      });
+      const result = await res.json();
 
-    if (error) { toast.error(error.message); return; }
-    toast.success("Email verified! Welcome aboard.");
-    router.push(role === "owner" ? "/owner/listings" : "/tenant/search");
+      if (!result.success) { toast.error(result.error || "Invalid or expired OTP"); return; }
+
+      // OTP valid — sign them in
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) { toast.error(signInError.message); return; }
+
+      toast.success("Email verified! Welcome aboard.");
+      router.push(role === "owner" ? "/owner/listings" : "/tenant/search");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResend = async () => {
     setResending(true);
-    const { error } = await supabase.auth.resend({
-      email,
-      type: "signup",
-    });
-    setResending(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("OTP resent!");
+    try {
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const result = await res.json();
+      if (!result.success) { toast.error(result.error || "Failed to resend"); return; }
+      toast.success("OTP resent!");
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -87,7 +115,6 @@ export default function SignupPage() {
 
             {step === 1 ? (
               <>
-                {/* Step 1 header */}
                 <div className="mb-8">
                   <h1 className="font-display text-2xl font-semibold text-[#1c1917] mb-1">
                     Create account
@@ -98,13 +125,11 @@ export default function SignupPage() {
                 <div className="space-y-4">
                   {/* Role selector */}
                   <div>
-                    <label className="block text-xs font-medium text-[#57534e] mb-2">
-                      I am a
-                    </label>
+                    <label className="block text-xs font-medium text-[#57534e] mb-2">I am a</label>
                     <div className="grid grid-cols-2 gap-2">
                       {([
                         { value: "tenant", label: "Tenant", sub: "Looking for a PG", icon: Search },
-                        { value: "owner", label: "Owner", sub: "Listing my PG", icon: Home },
+                        { value: "owner",  label: "Owner",  sub: "Listing my PG",    icon: Home  },
                       ] as const).map(({ value, label, sub, icon: Icon }) => (
                         <button
                           key={value}
@@ -128,9 +153,7 @@ export default function SignupPage() {
 
                   {/* Full name */}
                   <div>
-                    <label className="block text-xs font-medium text-[#57534e] mb-1.5">
-                      Full name
-                    </label>
+                    <label className="block text-xs font-medium text-[#57534e] mb-1.5">Full name</label>
                     <div className="relative">
                       <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a8a29e]" />
                       <input
@@ -146,9 +169,7 @@ export default function SignupPage() {
 
                   {/* Email */}
                   <div>
-                    <label className="block text-xs font-medium text-[#57534e] mb-1.5">
-                      Email address
-                    </label>
+                    <label className="block text-xs font-medium text-[#57534e] mb-1.5">Email address</label>
                     <div className="relative">
                       <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a8a29e]" />
                       <input
@@ -165,9 +186,7 @@ export default function SignupPage() {
 
                   {/* Password */}
                   <div>
-                    <label className="block text-xs font-medium text-[#57534e] mb-1.5">
-                      Password
-                    </label>
+                    <label className="block text-xs font-medium text-[#57534e] mb-1.5">Password</label>
                     <div className="relative">
                       <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a8a29e]" />
                       <input
@@ -182,7 +201,6 @@ export default function SignupPage() {
                     </div>
                   </div>
 
-                  {/* Continue button */}
                   <button
                     onClick={handleSignUp}
                     disabled={loading}
@@ -201,7 +219,6 @@ export default function SignupPage() {
               </>
             ) : (
               <>
-                {/* Step 2 header */}
                 <div className="mb-8">
                   <button
                     onClick={() => { setStep(1); setOtp(""); }}
@@ -222,7 +239,6 @@ export default function SignupPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {/* OTP input */}
                   <div>
                     <label className="block text-xs font-medium text-[#57534e] mb-1.5">
                       Verification code
@@ -239,7 +255,6 @@ export default function SignupPage() {
                     />
                   </div>
 
-                  {/* Verify button */}
                   <button
                     onClick={handleVerify}
                     disabled={loading || otp.length !== 6}
@@ -248,7 +263,6 @@ export default function SignupPage() {
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify & continue"}
                   </button>
 
-                  {/* Resend */}
                   <div className="text-center">
                     <span className="text-xs text-[#78716c]">Didn&apos;t receive it? </span>
                     <button
