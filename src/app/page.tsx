@@ -1,293 +1,487 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
-import { Search, Shield, IndianRupee, Star, ArrowRight, MapPin } from "lucide-react";
+import {
+  Search, Shield, IndianRupee, Star, ArrowRight, MapPin,
+  ChevronLeft, ChevronRight, Calendar, Wifi, Users, Home,
+  Phone, Globe, Info, Wrench, FileText,
+} from "lucide-react";
+
+// ── Data ────────────────────────────────────────────────────
+
+const AREAS = ["All", "Andheri West", "Bandra", "Powai", "Thane West", "Malad", "Goregaon", "Dadar", "Kurla"];
+
+const LISTINGS = [
+  {
+    id: 1,
+    name: "Andheri Premium PG",
+    area: "Andheri West",
+    rent: 12000,
+    type: "Double",
+    verified: true,
+    gradient: "from-[#1a3d2b] to-[#2d6a4f]",
+  },
+  {
+    id: 2,
+    name: "Bandra Elite Stay",
+    area: "Bandra",
+    rent: 18000,
+    type: "Single",
+    verified: true,
+    gradient: "from-[#0f2d1e] to-[#1a3d2b]",
+  },
+  {
+    id: 3,
+    name: "Powai Lake View PG",
+    area: "Powai",
+    rent: 15000,
+    type: "Triple",
+    verified: true,
+    gradient: "from-[#163324] to-[#1a3d2b]",
+  },
+  {
+    id: 4,
+    name: "Thane Comfort House",
+    area: "Thane West",
+    rent: 9000,
+    type: "Double",
+    verified: false,
+    gradient: "from-[#1f2937] to-[#374151]",
+  },
+  {
+    id: 5,
+    name: "Malad Student Hub",
+    area: "Malad",
+    rent: 8000,
+    type: "Dormitory",
+    verified: true,
+    gradient: "from-[#1a3d2b] to-[#0f2d1e]",
+  },
+];
+
+const CATEGORIES = [
+  { icon: Home,        label: "Search PG" },
+  { icon: Info,        label: "Verified Listings" },
+  { icon: MapPin,      label: "Mumbai Locations" },
+  { icon: Users,       label: "Tenant Support" },
+  { icon: Wrench,      label: "Maintenance" },
+  { icon: Phone,       label: "Customer Service" },
+  { icon: IndianRupee, label: "Secure Deposit" },
+  { icon: FileText,    label: "Booking Docs" },
+  { icon: Globe,       label: "Owner Portal" },
+];
+
+// ── Component ────────────────────────────────────────────────
 
 export default function HomePage() {
-  return (
-    <div className="min-h-screen bg-[#f0f4ff] overflow-hidden">
+  const [activeArea, setActiveArea] = useState("All");
+  const [activeCard, setActiveCard] = useState(1);
+  const [searchArea, setSearchArea]   = useState("");
+  const [searchType, setSearchType]   = useState("");
+  const [searchPrice, setSearchPrice] = useState("");
 
-      {/* ── NAV ─────────────────────────────────────────────── */}
-      <nav className="relative z-50 flex items-center justify-between px-8 py-5 max-w-7xl mx-auto">
-        <span className="font-display text-2xl font-semibold text-white">
-          PG<span className="text-[#7dd3fc]">Owns</span>
-        </span>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="text-sm font-medium text-white/70 hover:text-white transition-colors px-4 py-2 rounded-full hover:bg-white/10"
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/signup"
-            className="text-sm font-semibold bg-white text-[#0f2044] px-5 py-2.5 rounded-full hover:bg-white/90 transition-colors shadow-lg"
-          >
-            Get started
-          </Link>
+  const prevIdx = (activeCard - 1 + LISTINGS.length) % LISTINGS.length;
+  const nextIdx = (activeCard + 1) % LISTINGS.length;
+
+  const buildSearchUrl = () => {
+    const params = new URLSearchParams();
+    if (searchArea)  params.set("area", searchArea);
+    if (searchType)  params.set("room_type", searchType);
+    if (searchPrice) params.set("max_rent", searchPrice);
+    const qs = params.toString();
+    return `/tenant/search${qs ? `?${qs}` : ""}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-white font-body overflow-x-hidden">
+
+      {/* ── NAV ───────────────────────────────────────────── */}
+      <nav className="absolute top-0 inset-x-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 py-5 flex items-center justify-between">
+          <span className="font-display text-2xl font-black text-white tracking-tight">
+            PG<span className="text-[#f59e0b]">Owns</span>
+          </span>
+
+          <div className="hidden md:flex items-center gap-10">
+            {[
+              { label: "Home",   href: "/" },
+              { label: "Search", href: "/tenant/search" },
+              { label: "About",  href: "/" },
+            ].map((item) => (
+              <Link
+                key={item.label}
+                href={item.href}
+                className="text-sm font-medium text-white/75 hover:text-white transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="text-sm font-medium text-white/70 hover:text-white transition-colors px-3 py-2"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/signup"
+              className="text-sm font-bold bg-[#f59e0b] text-[#111827] px-5 py-2.5 rounded-full hover:bg-[#fbbf24] transition-colors shadow-lg"
+            >
+              Get started
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* ── HERO ────────────────────────────────────────────── */}
-      <section className="relative min-h-[88vh] flex items-center -mt-[72px] pt-[72px]">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#060d1f] via-[#0d1f44] to-[#160d35]" />
+      {/* ── HERO ──────────────────────────────────────────── */}
+      <section className="relative h-[82vh] min-h-[580px]">
+        {/* High-quality room photo */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600&q=80"
+          alt="Modern apartment interior"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Dark forest-green overlay */}
+        <div className="absolute inset-0 bg-[#0a1f12]/70" />
 
-        {/* Ambient blobs */}
-        <div className="absolute top-24 right-16 w-[500px] h-[500px] bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-16 left-32 w-[400px] h-[400px] bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-sky-400/8 rounded-full blur-2xl pointer-events-none" />
+        {/* Hero text — bottom left */}
+        <div className="absolute bottom-24 left-6 md:left-16 max-w-lg">
+          <p className="text-[#f59e0b] text-xs font-bold uppercase tracking-[0.2em] mb-3">
+            Mumbai&apos;s #1 PG Platform
+          </p>
+          <h1 className="font-display text-5xl md:text-[3.75rem] font-black text-white leading-[1.0] mb-5">
+            Find Your<br />Perfect PG<br />in Mumbai
+          </h1>
+          <Link
+            href="/tenant/search"
+            className="inline-flex items-center gap-2 text-white/80 text-sm font-semibold border-b border-white/40 pb-0.5 hover:text-white hover:border-white transition-all"
+          >
+            Browse all listings <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </section>
 
-        {/* Content grid */}
-        <div className="relative z-10 max-w-7xl mx-auto px-8 w-full py-20 grid md:grid-cols-2 gap-16 items-center">
+      {/* ── SEARCH BAR — floating over hero bottom ────────── */}
+      <div className="relative z-10 -mt-10 px-4 md:px-10 max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-2xl border border-[#e5e7eb] flex flex-col md:flex-row items-stretch overflow-hidden">
 
-          {/* Left — headline + search */}
-          <div>
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-xs font-medium px-4 py-2 rounded-full mb-8">
-              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              Now live in Mumbai
-            </div>
-
-            <h1 className="font-display text-5xl md:text-[4.5rem] font-semibold text-white leading-[1.05] mb-6">
-              Your next
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7dd3fc] to-[#a5b4fc] italic">
-                perfect home
-              </span>
-              <br />
-              in Mumbai
-            </h1>
-
-            <p className="text-base text-white/50 mb-10 leading-relaxed max-w-md">
-              Transparent deposits, verified PG listings, and secure payments.
-              Built for students and working professionals.
-            </p>
-
-            {/* Search bar */}
-            <div className="flex gap-3 max-w-lg">
-              <div className="flex-1 flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl px-5 py-4 focus-within:border-white/30 transition-colors">
-                <MapPin className="w-4 h-4 text-white/40 flex-shrink-0" />
-                <input
-                  type="text"
-                  placeholder="Andheri, Bandra, Powai..."
-                  className="flex-1 text-sm bg-transparent outline-none text-white placeholder:text-white/35"
-                />
-              </div>
-              <Link
-                href="/tenant/search"
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-6 py-4 rounded-2xl font-medium text-sm hover:opacity-90 transition-opacity flex-shrink-0 shadow-lg shadow-blue-500/30"
-              >
-                <Search className="w-4 h-4" />
-                Search
-              </Link>
-            </div>
+          <div className="flex-1 flex flex-col justify-center px-5 py-4 border-b md:border-b-0 md:border-r border-[#e5e7eb]">
+            <span className="text-[9px] font-bold text-[#9ca3af] uppercase tracking-widest mb-1">
+              City / Area
+            </span>
+            <select
+              value={searchArea}
+              onChange={(e) => setSearchArea(e.target.value)}
+              className="text-sm font-semibold text-[#111827] bg-transparent outline-none appearance-none cursor-pointer"
+            >
+              <option value="">Any area in Mumbai</option>
+              {AREAS.filter((a) => a !== "All").map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Right — floating glass cards */}
-          <div className="relative hidden md:block h-[500px]">
+          <div className="flex-1 flex flex-col justify-center px-5 py-4 border-b md:border-b-0 md:border-r border-[#e5e7eb]">
+            <span className="text-[9px] font-bold text-[#9ca3af] uppercase tracking-widest mb-1">
+              Type of Sharing
+            </span>
+            <select
+              value={searchType}
+              onChange={(e) => setSearchType(e.target.value)}
+              className="text-sm font-semibold text-[#111827] bg-transparent outline-none appearance-none cursor-pointer"
+            >
+              <option value="">Any type</option>
+              <option value="single">Single</option>
+              <option value="double">Double</option>
+              <option value="triple">Triple</option>
+              <option value="dormitory">Dormitory</option>
+            </select>
+          </div>
 
-            {/* Card: stats */}
-            <div className="absolute top-4 left-4 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[1.75rem] p-6 shadow-2xl w-52">
-              <p className="text-white/50 text-xs mb-2">Verified Listings</p>
-              <p className="font-display text-5xl font-semibold text-white">500+</p>
-              <div className="mt-4 flex -space-x-2">
-                {["bg-blue-400", "bg-indigo-400", "bg-violet-400", "bg-sky-400"].map((c, i) => (
-                  <div key={i} className={`w-7 h-7 rounded-full ${c} border-2 border-white/20`} />
-                ))}
-              </div>
-            </div>
+          <div className="flex-1 flex flex-col justify-center px-5 py-4 border-b md:border-b-0 md:border-r border-[#e5e7eb]">
+            <span className="text-[9px] font-bold text-[#9ca3af] uppercase tracking-widest mb-1">
+              Max Rent
+            </span>
+            <select
+              value={searchPrice}
+              onChange={(e) => setSearchPrice(e.target.value)}
+              className="text-sm font-semibold text-[#111827] bg-transparent outline-none appearance-none cursor-pointer"
+            >
+              <option value="">Any price</option>
+              <option value="5000">Up to ₹5,000</option>
+              <option value="10000">Up to ₹10,000</option>
+              <option value="15000">Up to ₹15,000</option>
+              <option value="20000">Up to ₹20,000</option>
+            </select>
+          </div>
 
-            {/* Card: listing preview */}
-            <div className="absolute top-10 right-4 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-[1.75rem] p-5 shadow-2xl w-64">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="font-semibold text-white text-sm">Andheri West PG</p>
-                  <p className="text-white/40 text-xs mt-0.5 flex items-center gap-1">
-                    <MapPin className="w-2.5 h-2.5" /> Near Metro Station
-                  </p>
-                </div>
-                <div className="w-8 h-8 bg-white/15 rounded-xl flex items-center justify-center">
-                  <ArrowRight className="w-3.5 h-3.5 text-white" />
-                </div>
-              </div>
-              <div className="bg-gradient-to-br from-blue-500/30 to-indigo-500/30 rounded-2xl h-24 mb-4 flex items-center justify-center border border-white/10">
-                <span className="text-white/25 text-[10px]">Room photo</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <p className="text-white font-semibold">
-                  ₹12,000<span className="text-white/40 font-normal text-xs">/mo</span>
-                </p>
-                <div className="flex items-center gap-1">
-                  <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                  <span className="text-white/60 text-xs">4.8</span>
-                </div>
-              </div>
-            </div>
+          <Link
+            href={buildSearchUrl()}
+            className="flex items-center justify-center gap-2 bg-[#1a3d2b] text-white px-8 py-5 font-bold text-sm hover:bg-[#0f2d1e] transition-colors flex-shrink-0"
+          >
+            <Search className="w-4 h-4" />
+            Search
+          </Link>
+        </div>
+      </div>
 
-            {/* Card: zero fee */}
-            <div className="absolute bottom-28 left-10 bg-gradient-to-br from-blue-500/25 to-indigo-500/25 backdrop-blur-2xl border border-white/15 rounded-[1.75rem] p-5 shadow-2xl w-52">
-              <div className="w-10 h-10 bg-white/15 rounded-2xl flex items-center justify-center mb-3">
-                <IndianRupee className="w-5 h-5 text-white" />
-              </div>
-              <p className="font-semibold text-white text-sm">₹0 Platform Fee</p>
-              <p className="text-white/40 text-xs mt-1">Always free for tenants</p>
-            </div>
+      {/* ── AREA FILTER TABS ──────────────────────────────── */}
+      <section className="mt-10 px-4 md:px-10 max-w-7xl mx-auto">
+        <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
+          {AREAS.map((area) => (
+            <button
+              key={area}
+              onClick={() => setActiveArea(area)}
+              className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all ${
+                activeArea === area
+                  ? "bg-[#1a3d2b] text-white shadow-md"
+                  : "bg-[#f3f4f6] text-[#374151] hover:bg-[#e5e7eb]"
+              }`}
+            >
+              {area}
+            </button>
+          ))}
+        </div>
+      </section>
 
-            {/* Card: deposit badge */}
-            <div className="absolute bottom-8 right-8 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-2xl p-4 shadow-2xl">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-emerald-500/25 rounded-xl flex items-center justify-center">
-                  <Shield className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-white text-xs font-semibold">Deposit Protected</p>
-                  <p className="text-white/40 text-[10px]">100% transparent</p>
-                </div>
-              </div>
-            </div>
+      {/* ── PG CARDS CAROUSEL ─────────────────────────────── */}
+      <section className="mt-8 pb-16 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 md:px-10 mb-6 flex items-center justify-between">
+          <h2 className="font-display text-2xl font-black text-[#111827]">
+            Featured PGs
+          </h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveCard(prevIdx)}
+              className="w-9 h-9 rounded-full border border-[#e5e7eb] flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 text-[#374151]" />
+            </button>
+            <button
+              onClick={() => setActiveCard(nextIdx)}
+              className="w-9 h-9 rounded-full border border-[#e5e7eb] flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 text-[#374151]" />
+            </button>
+          </div>
+        </div>
 
+        <div className="flex items-center justify-center gap-4 px-4">
+          {/* Left peeking card */}
+          <div
+            className="hidden md:block w-60 flex-shrink-0 opacity-50 scale-90 origin-right transition-all duration-300 cursor-pointer"
+            onClick={() => setActiveCard(prevIdx)}
+          >
+            <ListingCard listing={LISTINGS[prevIdx]} />
+          </div>
+
+          {/* Center / active card */}
+          <div className="w-full max-w-[340px] flex-shrink-0 transition-all duration-300 drop-shadow-2xl">
+            <ListingCard listing={LISTINGS[activeCard]} featured />
+          </div>
+
+          {/* Right peeking card */}
+          <div
+            className="hidden md:block w-60 flex-shrink-0 opacity-50 scale-90 origin-left transition-all duration-300 cursor-pointer"
+            onClick={() => setActiveCard(nextIdx)}
+          >
+            <ListingCard listing={LISTINGS[nextIdx]} />
+          </div>
+        </div>
+
+        {/* Dot pagination */}
+        <div className="flex items-center justify-center gap-2 mt-8">
+          {LISTINGS.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveCard(i)}
+              className={`rounded-full transition-all duration-300 ${
+                i === activeCard
+                  ? "w-6 h-2.5 bg-[#f59e0b]"
+                  : "w-2.5 h-2.5 bg-[#d1d5db] hover:bg-[#9ca3af]"
+              }`}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* ── CATEGORIES GRID ───────────────────────────────── */}
+      <section className="bg-[#f8faf8] py-20">
+        <div className="max-w-5xl mx-auto px-6 md:px-10">
+          <h2 className="font-display text-4xl md:text-5xl font-black text-[#111827] text-center mb-2">
+            Categories &amp; Information
+          </h2>
+          <p className="text-[#6b7280] text-center mb-12 text-sm">
+            Everything you need to find and manage your perfect PG
+          </p>
+
+          <div className="grid grid-cols-3 gap-3 md:gap-4">
+            {CATEGORIES.map(({ icon: Icon, label }) => (
+              <div
+                key={label}
+                className="flex items-center gap-3 bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
+              >
+                <div className="w-11 h-11 bg-[#1a3d2b] rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[#0f2d1e] transition-colors">
+                  <Icon className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xs md:text-sm font-semibold text-[#111827] leading-tight">
+                  {label}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── FEATURES ────────────────────────────────────────── */}
-      <section className="relative bg-white pt-28 pb-24 overflow-hidden">
-        {/* Transition from dark hero */}
-        <div className="absolute top-0 inset-x-0 h-20 bg-gradient-to-b from-[#160d35] to-transparent pointer-events-none" />
+      {/* ── WHY PGOWNS ────────────────────────────────────── */}
+      <section className="py-20 bg-white">
+        <div className="max-w-5xl mx-auto px-6 md:px-10">
+          <h2 className="font-display text-4xl font-black text-[#111827] text-center mb-2">
+            3 Reasons to Choose Us
+          </h2>
+          <p className="text-[#6b7280] text-center mb-12 text-sm">
+            Built specifically for Mumbai PG seekers
+          </p>
 
-        <div className="max-w-6xl mx-auto px-8">
-          <div className="text-center mb-16">
-            <h2 className="font-display text-4xl md:text-5xl font-semibold text-[#0f172a] mb-3">
-              Why PG Owns?
-            </h2>
-            <p className="text-[#64748b]">Everything you need, nothing you don&apos;t.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-3 gap-6">
             {[
               {
                 icon: Shield,
-                title: "Transparent deposit tracker",
-                desc: "See your exact deposit balance at all times. Every deduction requires a reason. Dispute unfair claims directly in the app.",
-                from: "from-blue-50",
-                to: "to-indigo-50/60",
-                iconBg: "bg-blue-100",
-                iconColor: "text-blue-600",
-                blob: "bg-blue-400",
+                title: "Transparent Deposit",
+                desc: "See your exact deposit balance at all times. Every deduction requires a reason. Dispute unfair claims directly.",
               },
               {
                 icon: IndianRupee,
-                title: "Secure payments",
-                desc: "Pay rent and deposit through Razorpay. Your deposit is held safely and only released at the end of your contract.",
-                from: "from-emerald-50",
-                to: "to-teal-50/60",
-                iconBg: "bg-emerald-100",
-                iconColor: "text-emerald-600",
-                blob: "bg-emerald-400",
+                title: "Secure Payments",
+                desc: "Pay rent and deposit through Razorpay. Your money is held safely and only released at contract end.",
               },
               {
                 icon: Star,
-                title: "Verified listings",
-                desc: "PG owners go through a verification process. Photos are real, amenities are accurate, and rules are clearly stated.",
-                from: "from-violet-50",
-                to: "to-purple-50/60",
-                iconBg: "bg-violet-100",
-                iconColor: "text-violet-600",
-                blob: "bg-violet-400",
+                title: "Verified Listings",
+                desc: "Every PG goes through verification. Photos are real, amenities accurate, and rules clearly stated.",
               },
             ].map((f) => (
               <div
                 key={f.title}
-                className={`bg-gradient-to-br ${f.from} ${f.to} rounded-[2rem] p-8 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300`}
+                className="relative border border-[#e5e7eb] rounded-3xl p-7 group hover:border-[#1a3d2b] transition-colors"
               >
-                <div className={`w-12 h-12 ${f.iconBg} rounded-2xl flex items-center justify-center mb-6`}>
-                  <f.icon className={`w-6 h-6 ${f.iconColor}`} />
+                {/* Corner notch decoration */}
+                <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-[#1a3d2b] rounded-tr-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-[#1a3d2b] rounded-bl-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                <div className="w-12 h-12 bg-[#1a3d2b] rounded-xl flex items-center justify-center mb-5">
+                  <f.icon className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="font-display font-semibold text-[#0f172a] mb-3 text-lg">{f.title}</h3>
-                <p className="text-sm text-[#64748b] leading-relaxed">{f.desc}</p>
-                {/* Decorative blob */}
-                <div className={`absolute -bottom-10 -right-10 w-40 h-40 ${f.blob}/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-500`} />
+                <h3 className="font-display font-bold text-[#111827] text-lg mb-2">{f.title}</h3>
+                <p className="text-sm text-[#6b7280] leading-relaxed mb-4">{f.desc}</p>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#1a3d2b] hover:gap-2.5 transition-all"
+                >
+                  Read More <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── AREAS ───────────────────────────────────────────── */}
-      <section className="bg-[#f8faff] py-24">
-        <div className="max-w-6xl mx-auto px-8">
-          <div className="flex items-center justify-between mb-12">
-            <h2 className="font-display text-4xl md:text-5xl font-semibold text-[#0f172a]">
-              Popular areas
-            </h2>
-            <Link
-              href="/tenant/search"
-              className="flex items-center gap-1.5 text-sm text-blue-500 font-medium hover:gap-2.5 transition-all duration-200"
-            >
-              View all <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-4">
-            {[
-              { name: "Andheri West", gradient: "from-blue-400 to-indigo-500" },
-              { name: "Bandra East",  gradient: "from-violet-400 to-purple-500" },
-              { name: "Powai",        gradient: "from-sky-400 to-blue-500" },
-              { name: "Thane West",   gradient: "from-indigo-400 to-blue-600" },
-            ].map((area) => (
-              <Link
-                key={area.name}
-                href={`/tenant/search?area=${encodeURIComponent(area.name)}`}
-                className="group relative bg-white rounded-[1.75rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className={`h-32 bg-gradient-to-br ${area.gradient} relative`}>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                    <MapPin className="w-12 h-12 text-white" />
-                  </div>
-                </div>
-                <div className="p-4">
-                  <div className="font-semibold text-[#0f172a] text-sm">{area.name}</div>
-                  <div className="text-xs text-[#94a3b8] mt-0.5">Mumbai</div>
-                </div>
-              </Link>
-            ))}
-          </div>
+      {/* ── OWNER CTA ─────────────────────────────────────── */}
+      <section className="bg-[#1a3d2b] relative overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl" />
         </div>
-      </section>
-
-      {/* ── OWNER CTA ───────────────────────────────────────── */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a8a] to-[#312e81]" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-6xl mx-auto px-8 py-20 flex flex-col md:flex-row items-center justify-between gap-10">
+        <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-10 py-20 flex flex-col md:flex-row items-center justify-between gap-8">
           <div>
-            <h2 className="font-display text-4xl font-semibold text-white mb-4">
+            <h2 className="font-display text-4xl font-black text-white mb-3">
               Own a PG? List it for free.
             </h2>
-            <p className="text-white/55 max-w-md leading-relaxed">
-              Reach thousands of verified tenants. Manage bookings, collect payments,
-              and handle deposits — all from one dashboard.
+            <p className="text-white/55 max-w-md leading-relaxed text-sm">
+              Reach thousands of verified tenants. Manage bookings, collect payments, and handle deposits — all from one dashboard.
             </p>
           </div>
           <Link
             href="/signup?role=owner"
-            className="flex items-center gap-2 bg-white text-[#1e3a8a] px-8 py-4 rounded-2xl font-semibold text-sm hover:bg-white/90 transition-colors flex-shrink-0 shadow-2xl"
+            className="flex items-center gap-2 bg-[#f59e0b] text-[#111827] px-8 py-4 rounded-full font-black text-sm hover:bg-[#fbbf24] transition-colors flex-shrink-0 shadow-xl"
           >
             List your PG <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </section>
 
-      {/* ── FOOTER ──────────────────────────────────────────── */}
-      <footer className="bg-[#060d1f] border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-8 py-8 flex items-center justify-between">
-          <span className="font-display text-lg font-semibold text-white">
-            PG<span className="text-[#7dd3fc]">Owns</span>
+      {/* ── FOOTER ────────────────────────────────────────── */}
+      <footer className="bg-[#0a1f12]">
+        <div className="max-w-6xl mx-auto px-6 md:px-10 py-8 flex items-center justify-between">
+          <span className="font-display text-lg font-black text-white tracking-tight">
+            PG<span className="text-[#f59e0b]">Owns</span>
           </span>
-          <p className="text-xs text-white/25">© 2024 PG Owns. Built for Mumbai.</p>
+          <p className="text-xs text-white/30">© 2024 PG Owns. Built for Mumbai.</p>
         </div>
       </footer>
 
+    </div>
+  );
+}
+
+// ── Listing Card ─────────────────────────────────────────────
+
+function ListingCard({
+  listing,
+  featured = false,
+}: {
+  listing: (typeof LISTINGS)[0];
+  featured?: boolean;
+}) {
+  return (
+    <div
+      className={`bg-white rounded-3xl overflow-hidden ${
+        featured ? "shadow-2xl ring-2 ring-[#1a3d2b]/10" : "shadow-md"
+      }`}
+    >
+      {/* Gradient image placeholder */}
+      <div className={`h-44 bg-gradient-to-br ${listing.gradient} relative`}>
+        {listing.verified && (
+          <span className="absolute top-3 left-3 bg-[#f59e0b] text-[#111827] text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wide">
+            Verified
+          </span>
+        )}
+        <span className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">
+          {listing.type}
+        </span>
+        {/* Decorative dots */}
+        <div className="absolute bottom-4 right-4 flex gap-1.5">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/30" />
+          ))}
+        </div>
+      </div>
+
+      <div className="p-5">
+        <h3 className="font-display font-bold text-[#111827] text-base mb-1 leading-tight">
+          {listing.name}
+        </h3>
+        <div className="flex items-center gap-1 text-[#9ca3af] text-xs mb-4">
+          <MapPin className="w-3 h-3" /> {listing.area}, Mumbai
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="font-black text-xl text-[#1a3d2b]">
+              ₹{listing.rent.toLocaleString("en-IN")}
+            </span>
+            <span className="text-[#9ca3af] text-xs">/mo</span>
+          </div>
+          <Link
+            href={`/tenant/search?area=${encodeURIComponent(listing.area)}`}
+            className="bg-[#1a3d2b] text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-[#0f2d1e] transition-colors"
+          >
+            View →
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }
