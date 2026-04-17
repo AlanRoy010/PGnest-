@@ -57,7 +57,7 @@ export default function TenantLayout({
             href="/"
             className="font-display text-xl font-semibold text-[#1c1917]"
           >
-            <Image src="/logo.svg" alt="PGOwns" width={56} height={56} className="-mr-1" /><span className="font-display font-black">Owns</span>
+            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} /><span className="font-display font-black">Owns</span>
           </Link>
           <div className="mt-0.5 text-xs text-[#a8a29e]">Tenant Dashboard</div>
         </div>
@@ -144,7 +144,7 @@ export default function TenantLayout({
             href="/"
             className="font-display text-lg font-semibold text-[#1c1917]"
           >
-            <Image src="/logo.svg" alt="PGOwns" width={56} height={56} className="-mr-1" /><span className="font-display font-black">Owns</span>
+            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} /><span className="font-display font-black">Owns</span>
           </Link>
           <button
             onClick={() => setMobileOpen(true)}

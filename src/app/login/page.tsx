@@ -49,7 +49,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#fafaf9] flex flex-col">
       <nav className="px-6 py-4">
         <Link href="/" className="font-display text-2xl font-semibold text-[#1c1917]">
-          <Image src="/logo.svg" alt="PGOwns" width={60} height={60} className="-mr-1" /><span className="font-display font-black">Owns</span>
+          <Image src="/logo.svg" alt="PGOwns" width={40} height={40} /><span className="font-display font-black">Owns</span>
         </Link>
       </nav>
 
