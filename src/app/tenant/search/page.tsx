@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, AMENITY_LABELS, AREAS_MUMBAI } from "@/lib/utils";
 import {
@@ -12,7 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 function SearchPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const searchParams = useSearchParams();
 
   const [listings, setListings] = useState<Listing[]>([]);
@@ -27,11 +27,7 @@ function SearchPage() {
   const [furnishing, setFurnishing] = useState("");
   const [roomType, setRoomType] = useState("");
 
-  useEffect(() => {
-    fetchListings();
-  }, [area, minRent, maxRent, gender, furnishing, roomType]);
-
-  const fetchListings = async () => {
+  const fetchListings = useCallback(async () => {
     setLoading(true);
 
     let query = supabase
@@ -50,7 +46,11 @@ function SearchPage() {
     const { data } = await query;
     setListings(data || []);
     setLoading(false);
-  };
+  }, [supabase, area, minRent, maxRent, gender, furnishing, roomType]);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
 
   const clearFilters = () => {
     setArea("");

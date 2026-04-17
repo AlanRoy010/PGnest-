@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, AMENITY_LABELS } from "@/lib/utils";
 import {
@@ -13,17 +13,20 @@ import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import type { Listing } from "@/types";
 
+type OwnerSnippet = { full_name: string; phone: string | null };
+type ListingWithOwner = Omit<Listing, "owner"> & { owner?: OwnerSnippet | null };
+
 const TIME_SLOTS = [
   "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM",
   "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM",
 ];
 
 export default function ListingDetailPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const params = useParams();
   const { profile } = useUser();
 
-  const [listing, setListing] = useState<Listing | null>(null);
+  const [listing, setListing] = useState<ListingWithOwner | null>(null);
   const [loading, setLoading] = useState(true);
   const [activePhoto, setActivePhoto] = useState(0);
 
@@ -48,7 +51,7 @@ export default function ListingDetailPage() {
       setLoading(false);
     };
     fetchListing();
-  }, [params.id]);
+  }, [params.id, supabase]);
 
   // Pre-fill user details
   useEffect(() => {
@@ -63,7 +66,7 @@ export default function ListingDetailPage() {
       }
     };
     prefillDetails();
-  }, [profile]);
+  }, [profile, supabase]);
 
   const closeVisitModal = () => {
     setShowVisit(false);
@@ -93,8 +96,8 @@ export default function ListingDetailPage() {
         visit_date: visitDate,
         visit_time: visitTime,
         user_id: profile?.id || null,
-        owner_phone: (listing!.owner as any)?.phone || null,
-        owner_name: (listing!.owner as any)?.full_name || null,
+        owner_phone: listing!.owner?.phone || null,
+        owner_name: listing!.owner?.full_name || null,
       }),
     });
     setVisitLoading(false);
@@ -123,7 +126,7 @@ export default function ListingDetailPage() {
     </div>
   );
 
-  const owner = listing.owner as any;
+  const owner = listing.owner;
 
   return (
     <div className="max-w-3xl mx-auto">

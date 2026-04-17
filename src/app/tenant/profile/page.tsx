@@ -21,7 +21,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (hookProfile && !localProfile) setLocalProfile(hookProfile);
-  }, [hookProfile]);
+  }, [hookProfile, localProfile]);
 
   useEffect(() => {
     if (hookEmail) setAuthEmail(hookEmail);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import {
@@ -15,7 +15,7 @@ import {
   ImagePlus, XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { Listing, CreateListingForm } from "@/types";
+import type { Listing, CreateListingForm, Gender } from "@/types";
 
 const BLANK_FORM: CreateListingForm = {
   title: "", description: "", address: "", area: "", pincode: "",
@@ -41,18 +41,18 @@ export default function AdminListingsPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!userLoading) fetchListings();
-  }, [userLoading]);
-
-  const fetchListings = async () => {
+  const fetchListings = useCallback(async () => {
     const { data } = await supabase
       .from("listings")
       .select("*")
       .order("created_at", { ascending: false });
     setListings(data || []);
     setLoading(false);
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!userLoading) fetchListings();
+  }, [userLoading, fetchListings]);
 
   const openCreate = () => {
     setForm(BLANK_FORM);
@@ -448,7 +448,7 @@ export default function AdminListingsPage() {
               <div className="grid grid-cols-3 gap-4">
                 <Field label="Gender preference">
                   <select className={inputCls} value={form.gender_preference}
-                    onChange={(e) => setForm({ ...form, gender_preference: e.target.value as any })}>
+                    onChange={(e) => setForm({ ...form, gender_preference: e.target.value as Gender })}>
                     <option value="any">Any</option>
                     <option value="male">Male only</option>
                     <option value="female">Female only</option>
@@ -456,7 +456,7 @@ export default function AdminListingsPage() {
                 </Field>
                 <Field label="Furnishing">
                   <select className={inputCls} value={form.furnishing}
-                    onChange={(e) => setForm({ ...form, furnishing: e.target.value as any })}>
+                    onChange={(e) => setForm({ ...form, furnishing: e.target.value as Listing["furnishing"] })}>
                     <option value="furnished">Furnished</option>
                     <option value="semi-furnished">Semi-furnished</option>
                     <option value="unfurnished">Unfurnished</option>
@@ -464,7 +464,7 @@ export default function AdminListingsPage() {
                 </Field>
                 <Field label="Room type">
                   <select className={inputCls} value={form.room_type}
-                    onChange={(e) => setForm({ ...form, room_type: e.target.value as any })}>
+                    onChange={(e) => setForm({ ...form, room_type: e.target.value as Listing["room_type"] })}>
                     <option value="single">Single</option>
                     <option value="double">Double sharing</option>
                     <option value="triple">Triple sharing</option>

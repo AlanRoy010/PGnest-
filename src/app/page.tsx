@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Search, Shield, IndianRupee, Star, ArrowRight, MapPin,
-  ChevronLeft, ChevronRight, Calendar, Wifi, Users, Home,
+  ChevronLeft, ChevronRight, Users, Home,
   Phone, Globe, Info, Wrench, FileText,
 } from "lucide-react";
 

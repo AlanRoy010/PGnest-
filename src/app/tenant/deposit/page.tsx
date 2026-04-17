@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import {
@@ -20,33 +20,38 @@ import {
 import { toast } from "sonner";
 import type { DepositDeduction } from "@/types";
 
+type RaisedBy = { full_name: string } | null;
+type DeductionWithOwner = DepositDeduction & { raised_by: RaisedBy };
+
+interface TenantDeposit {
+  id: string;
+  original_amount: number;
+  current_balance: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  booking: {
+    id: string;
+    monthly_rent: number;
+    move_in_date: string;
+    status: string;
+    listing: { title: string; area: string; address: string };
+    owner: { full_name: string; phone: string };
+  };
+  deductions: DeductionWithOwner[];
+}
+
 export default function TenantDepositPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { profile } = useUser();
 
-  const [deposit, setDeposit] = useState<any>(null);
+  const [deposit, setDeposit] = useState<TenantDeposit | null>(null);
   const [loading, setLoading] = useState(true);
   const [disputeForm, setDisputeForm] = useState<DepositDeduction | null>(null);
   const [disputeText, setDisputeText] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (!profile) return;
-    fetchDeposit();
-
-    const channel = supabase
-      .channel("deposit-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "deposit_deductions" },
-        () => fetchDeposit()
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [profile]);
-
-  const fetchDeposit = async () => {
+  const fetchDeposit = useCallback(async () => {
     const { data } = await supabase
       .from("deposits")
       .select(
@@ -69,9 +74,25 @@ export default function TenantDepositPage() {
       .limit(1)
       .maybeSingle();
 
-    setDeposit(data);
+    setDeposit(data as TenantDeposit | null);
     setLoading(false);
-  };
+  }, [supabase, profile]);
+
+  useEffect(() => {
+    if (!profile) return;
+    fetchDeposit();
+
+    const channel = supabase
+      .channel("deposit-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "deposit_deductions" },
+        () => fetchDeposit()
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [profile, fetchDeposit, supabase]);
 
   const approveDeduction = async (deduction: DepositDeduction) => {
     setSaving(true);
@@ -239,7 +260,7 @@ export default function TenantDepositPage() {
         ) : (
           <div className="divide-y divide-[#f5f5f4]">
             {deposit.deductions.map(
-              (d: DepositDeduction & { raised_by: any }) => {
+              (d: DeductionWithOwner) => {
                 const statusCfg = DEDUCTION_STATUS_CONFIG[d.status];
                 return (
                   <div key={d.id} className="p-5">

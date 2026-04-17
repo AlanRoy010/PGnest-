@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import {
@@ -31,7 +31,7 @@ interface DepositWithBooking extends Deposit {
 }
 
 export default function OwnerDepositPage() {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const { profile } = useUser();
 
   const [deposits, setDeposits] = useState<DepositWithBooking[]>([]);
@@ -45,11 +45,7 @@ export default function OwnerDepositPage() {
   const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (profile) fetchDeposits();
-  }, [profile]);
-
-  const fetchDeposits = async () => {
+  const fetchDeposits = useCallback(async () => {
     const { data } = await supabase
       .from("deposits")
       .select(
@@ -66,9 +62,13 @@ export default function OwnerDepositPage() {
       .eq("booking.owner_id", profile!.id)
       .order("created_at", { ascending: false });
 
-    setDeposits((data as any) || []);
+    setDeposits((data as DepositWithBooking[]) || []);
     setLoading(false);
-  };
+  }, [supabase, profile]);
+
+  useEffect(() => {
+    if (profile) fetchDeposits();
+  }, [profile, fetchDeposits]);
 
   const raiseDeduction = async () => {
     if (!deductForm) return;
@@ -154,7 +154,7 @@ export default function OwnerDepositPage() {
           const isExpanded = expandedId === deposit.id;
           const pendingDeductions =
             deposit.deductions?.filter((d) => d.status === "pending") || [];
-          const booking = deposit.booking as any;
+          const booking = deposit.booking;
 
           return (
             <div

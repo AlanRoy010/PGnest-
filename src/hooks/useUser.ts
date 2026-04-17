@@ -48,7 +48,7 @@ export function useUser() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase]);
 
   return {
     profile,
