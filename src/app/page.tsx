@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Search, Shield, IndianRupee, Star, ArrowRight, MapPin,
   ChevronLeft, ChevronRight, Users, Home,
@@ -99,9 +100,10 @@ export default function HomePage() {
       {/* ── NAV ───────────────────────────────────────────── */}
       <nav className="absolute top-0 inset-x-0 z-50">
         <div className="max-w-7xl mx-auto px-6 md:px-10 py-5 flex items-center justify-between">
-          <span className="font-display text-2xl font-black text-white tracking-tight">
-            PG<span className="text-[#f59e0b]">Owns</span>
-          </span>
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} className="brightness-0 invert" />
+            <span className="font-display text-xl font-black text-white tracking-tight">Owns</span>
+          </Link>
 
           <div className="hidden md:flex items-center gap-10">
             {[
@@ -416,9 +418,10 @@ export default function HomePage() {
       {/* ── FOOTER ────────────────────────────────────────── */}
       <footer className="bg-[#0a1f12]">
         <div className="max-w-6xl mx-auto px-6 md:px-10 py-8 flex items-center justify-between">
-          <span className="font-display text-lg font-black text-white tracking-tight">
-            PG<span className="text-[#f59e0b]">Owns</span>
-          </span>
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.svg" alt="PGOwns" width={28} height={28} className="brightness-0 invert" />
+            <span className="font-display text-lg font-black text-white tracking-tight">Owns</span>
+          </Link>
           <p className="text-xs text-white/30">© 2024 PG Owns. Built for Mumbai.</p>
         </div>
       </footer>

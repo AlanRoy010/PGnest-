@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Search, BookOpen, Shield, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
@@ -56,7 +57,7 @@ export default function TenantLayout({
             href="/"
             className="font-display text-xl font-semibold text-[#1c1917]"
           >
-            PG<span className="text-[#ea6c0a]">Owns</span>
+            <Image src="/logo.svg" alt="PGOwns" width={28} height={28} /><span className="font-display font-black">Owns</span>
           </Link>
           <div className="mt-0.5 text-xs text-[#a8a29e]">Tenant Dashboard</div>
         </div>
@@ -143,7 +144,7 @@ export default function TenantLayout({
             href="/"
             className="font-display text-lg font-semibold text-[#1c1917]"
           >
-            PG<span className="text-[#ea6c0a]">Owns</span>
+            <Image src="/logo.svg" alt="PGOwns" width={28} height={28} /><span className="font-display font-black">Owns</span>
           </Link>
           <button
             onClick={() => setMobileOpen(true)}

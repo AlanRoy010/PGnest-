@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
@@ -48,7 +49,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#fafaf9] flex flex-col">
       <nav className="px-6 py-4">
         <Link href="/" className="font-display text-2xl font-semibold text-[#1c1917]">
-          PG<span className="text-[#ea6c0a]">Owns</span>
+          <Image src="/logo.svg" alt="PGOwns" width={32} height={32} /><span className="font-display font-black">Owns</span>
         </Link>
       </nav>
 
