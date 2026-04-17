@@ -101,7 +101,7 @@ export default function HomePage() {
       <nav className="absolute top-0 inset-x-0 z-50">
         <div className="max-w-7xl mx-auto px-6 md:px-10 py-5 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} className="brightness-0 invert" />
+            <Image src="/logo.svg" alt="PGOwns" width={72} height={72} className="brightness-0 invert -mr-2" />
             <span className="font-display text-xl font-black text-white tracking-tight">Owns</span>
           </Link>
 
@@ -419,7 +419,7 @@ export default function HomePage() {
       <footer className="bg-[#0a1f12]">
         <div className="max-w-6xl mx-auto px-6 md:px-10 py-8 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.svg" alt="PGOwns" width={28} height={28} className="brightness-0 invert" />
+            <Image src="/logo.svg" alt="PGOwns" width={60} height={60} className="brightness-0 invert -mr-2" />
             <span className="font-display text-lg font-black text-white tracking-tight">Owns</span>
           </Link>
           <p className="text-xs text-white/30">© 2024 PG Owns. Built for Mumbai.</p>
