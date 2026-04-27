@@ -29,23 +29,25 @@ function SearchPage() {
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
+    try {
+      let query = supabase
+        .from("listings")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
 
-    let query = supabase
-      .from("listings")
-      .select("*, owner:profiles!listings_owner_id_fkey(full_name, phone)")
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
+      if (area) query = query.ilike("area", `%${area}%`);
+      if (minRent) query = query.gte("monthly_rent", Number(minRent));
+      if (maxRent) query = query.lte("monthly_rent", Number(maxRent));
+      if (gender) query = query.in("gender_preference", [gender, "any"]);
+      if (furnishing) query = query.eq("furnishing", furnishing);
+      if (roomType) query = query.eq("room_type", roomType);
 
-    if (area) query = query.ilike("area", `%${area}%`);
-    if (minRent) query = query.gte("monthly_rent", Number(minRent));
-    if (maxRent) query = query.lte("monthly_rent", Number(maxRent));
-    if (gender) query = query.in("gender_preference", [gender, "any"]);
-    if (furnishing) query = query.eq("furnishing", furnishing);
-    if (roomType) query = query.eq("room_type", roomType);
-
-    const { data } = await query;
-    setListings(data || []);
-    setLoading(false);
+      const { data } = await query;
+      setListings(data || []);
+    } finally {
+      setLoading(false);
+    }
   }, [supabase, area, minRent, maxRent, gender, furnishing, roomType]);
 
   useEffect(() => {

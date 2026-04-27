@@ -46,24 +46,27 @@ export default function OwnerDepositPage() {
   const [saving, setSaving] = useState(false);
 
   const fetchDeposits = useCallback(async () => {
-    const { data } = await supabase
-      .from("deposits")
-      .select(
+    try {
+      const { data } = await supabase
+        .from("deposits")
+        .select(
+          `
+          *,
+          booking:bookings!inner(
+            id,
+            tenant:profiles!bookings_tenant_id_fkey(full_name, phone),
+            listing:listings(title, area)
+          ),
+          deductions:deposit_deductions(*)
         `
-        *,
-        booking:bookings!inner(
-          id,
-          tenant:profiles!bookings_tenant_id_fkey(full_name, phone),
-          listing:listings(title, area)
-        ),
-        deductions:deposit_deductions(*)
-      `
-      )
-      .eq("booking.owner_id", profile!.id)
-      .order("created_at", { ascending: false });
+        )
+        .eq("booking.owner_id", profile!.id)
+        .order("created_at", { ascending: false });
 
-    setDeposits((data as DepositWithBooking[]) || []);
-    setLoading(false);
+      setDeposits((data as DepositWithBooking[]) || []);
+    } finally {
+      setLoading(false);
+    }
   }, [supabase, profile]);
 
   useEffect(() => {
