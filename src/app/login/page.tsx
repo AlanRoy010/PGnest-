@@ -3,13 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import { ArrowRight, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
-  const router = useRouter();
   const supabase = createClient();
 
   const [email, setEmail] = useState("");
@@ -38,11 +36,11 @@ export default function LoginPage() {
     toast.success("Welcome back!");
 
     if (profile?.role === "admin") {
-      router.push("/admin/dashboard");
+      window.location.href = "/admin/dashboard";
     } else if (profile?.role === "owner") {
-      router.push("/owner/listings");
+      window.location.href = "/owner/listings";
     } else {
-      router.push("/tenant/search");
+      window.location.href = "/tenant/search";
     }
   };
   return (

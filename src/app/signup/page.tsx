@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -12,7 +11,6 @@ type Role = "tenant" | "owner";
 
 export default function SignupPage() {
   const supabase = useMemo(() => createClient(), []);
-  const router = useRouter();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [role, setRole] = useState<Role>("tenant");
@@ -79,7 +77,7 @@ export default function SignupPage() {
       if (signInError) { toast.error(signInError.message); return; }
 
       toast.success("Email verified! Welcome aboard.");
-      router.push(role === "owner" ? "/owner/listings" : "/tenant/search");
+      window.location.href = role === "owner" ? "/owner/listings" : "/tenant/search";
     } finally {
       setLoading(false);
     }

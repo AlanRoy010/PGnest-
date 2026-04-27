@@ -28,38 +28,38 @@ const SHARING_LABELS: Record<number, string> = {
 
 // ─── Types for bed reservation system ───────────────────────────────────────
 
-interface Floor {
-  id: string;
-  floor_number: number;
-  floor_label: string;
-}
-
-interface SharingTypeWithCounts {
-  id: string;
-  sharing_type: number;
-  rent_per_person: number;
-  beds_per_room: number;
-  is_active: boolean;
-  total_beds: number;
-  available_beds: number;
-}
-
-interface BedWithRoom {
+interface BedCell {
   id: string;
   bed_number: number;
   status: "available" | "pending" | "occupied";
   reserved_by: string | null;
-  room_id: string;
-  room: { room_number: string } | null;
 }
 
-interface RawSharingType {
-  id: string;
+interface RoomRow {
+  room_id: string;
+  room_number: string;
+  sharing_type_id: string;
+  floor_id: string;
   sharing_type: number;
   rent_per_person: number;
-  beds_per_room: number;
-  is_active: boolean;
-  beds: { id: string; status: string }[];
+  beds: BedCell[];
+}
+
+interface FloorSection {
+  floor_id: string;
+  floor_label: string;
+  floor_number: number;
+  rooms: RoomRow[];
+}
+
+interface RawRoom {
+  id: string;
+  room_number: string;
+  floor_id: string;
+  sharing_type_id: string;
+  floor: { id: string; floor_label: string; floor_number: number } | null;
+  sharing_type: { sharing_type: number; rent_per_person: number; is_active: boolean } | null;
+  beds: { id: string; bed_number: number; status: string; reserved_by: string | null }[];
 }
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
@@ -477,131 +477,81 @@ function BedReservationSection({
   userId: string | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
-
-  const [floors, setFloors] = useState<Floor[]>([]);
-  const [selectedFloorId, setSelectedFloorId] = useState<string | null>(null);
-  const [sharingTypes, setSharingTypes] = useState<SharingTypeWithCounts[]>([]);
-  const [selectedSTId, setSelectedSTId] = useState<string | null>(null);
-  const [selectedST, setSelectedST] = useState<SharingTypeWithCounts | null>(null);
-  const [beds, setBeds] = useState<BedWithRoom[]>([]);
+  const [sections, setSections] = useState<FloorSection[]>([]);
   const [selectedBedId, setSelectedBedId] = useState<string | null>(null);
   const [tenantMessage, setTenantMessage] = useState("");
-  const [loadingFloors, setLoadingFloors] = useState(false);
-  const [loadingST, setLoadingST] = useState(false);
-  const [loadingBeds, setLoadingBeds] = useState(false);
   const [reserving, setReserving] = useState(false);
 
-  // Fetch floors with active sharing types
-  const fetchFloors = useCallback(async () => {
-    setLoadingFloors(true);
-    try {
-      const { data } = await supabase
-        .from("listing_floors")
-        .select("id, floor_number, floor_label, listing_sharing_types(id, is_active)")
-        .eq("listing_id", listingId)
-        .order("floor_number");
+  const fetchAll = useCallback(async () => {
+    const { data } = await supabase
+      .from("listing_rooms")
+      .select(`
+        id, room_number, floor_id, sharing_type_id,
+        floor:listing_floors(id, floor_label, floor_number),
+        sharing_type:listing_sharing_types(sharing_type, rent_per_person, is_active),
+        beds:listing_beds(id, bed_number, status, reserved_by)
+      `)
+      .eq("listing_id", listingId)
+      .order("room_number");
 
-      interface RawFloor {
-        id: string;
-        floor_number: number;
-        floor_label: string;
-        listing_sharing_types: { id: string; is_active: boolean }[];
+    const rawRooms = (data as unknown as RawRoom[]) || [];
+    const floorMap = new Map<string, FloorSection>();
+
+    rawRooms.forEach(room => {
+      if (!room.floor || !room.sharing_type?.is_active) return;
+      const fid = room.floor_id;
+      if (!floorMap.has(fid)) {
+        floorMap.set(fid, {
+          floor_id: fid,
+          floor_label: room.floor.floor_label,
+          floor_number: room.floor.floor_number,
+          rooms: [],
+        });
       }
+      floorMap.get(fid)!.rooms.push({
+        room_id: room.id,
+        room_number: room.room_number,
+        sharing_type_id: room.sharing_type_id,
+        floor_id: fid,
+        sharing_type: room.sharing_type.sharing_type,
+        rent_per_person: room.sharing_type.rent_per_person,
+        beds: (room.beds || []).map(b => ({
+          id: b.id,
+          bed_number: b.bed_number,
+          status: b.status as BedCell["status"],
+          reserved_by: b.reserved_by,
+        })),
+      });
+    });
 
-      const active = ((data as RawFloor[]) || []).filter(f =>
-        f.listing_sharing_types?.some(st => st.is_active)
-      );
-      const cleaned: Floor[] = active.map(f => ({
-        id: f.id,
-        floor_number: f.floor_number,
-        floor_label: f.floor_label,
-      }));
-      setFloors(cleaned);
-      return cleaned;
-    } catch {
-      return [] as Floor[];
-    } finally {
-      setLoadingFloors(false);
-    }
+    setSections(
+      Array.from(floorMap.values()).sort((a, b) => a.floor_number - b.floor_number)
+    );
   }, [supabase, listingId]);
 
   useEffect(() => {
-    fetchFloors().then(f => {
-      if (f.length > 0) setSelectedFloorId(f[0].id);
-    });
-  }, [fetchFloors]);
+    fetchAll();
+  }, [fetchAll]);
 
-  // Fetch sharing types when floor selected
-  const fetchSharingTypes = useCallback(async (floorId: string) => {
-    setLoadingST(true);
-    setSharingTypes([]);
-    setSelectedSTId(null);
-    setSelectedST(null);
-    setBeds([]);
-    setSelectedBedId(null);
-    try {
-      const { data } = await supabase
-        .from("listing_sharing_types")
-        .select("id, sharing_type, rent_per_person, beds_per_room, is_active, beds:listing_beds(id, status)")
-        .eq("floor_id", floorId)
-        .eq("is_active", true);
-
-      const processed: SharingTypeWithCounts[] = ((data as RawSharingType[]) || []).map(st => ({
-        id: st.id,
-        sharing_type: st.sharing_type,
-        rent_per_person: st.rent_per_person,
-        beds_per_room: st.beds_per_room,
-        is_active: st.is_active,
-        total_beds: st.beds?.length || 0,
-        available_beds: (st.beds || []).filter(b => b.status === "available").length,
-      }));
-      setSharingTypes(processed);
-    } finally {
-      setLoadingST(false);
+  const selectedBedInfo = useMemo(() => {
+    for (const section of sections) {
+      for (const room of section.rooms) {
+        const bed = room.beds.find(b => b.id === selectedBedId);
+        if (bed) return { bed, room, floor: section };
+      }
     }
-  }, [supabase]);
-
-  useEffect(() => {
-    if (selectedFloorId) fetchSharingTypes(selectedFloorId);
-  }, [selectedFloorId, fetchSharingTypes]);
-
-  // Fetch beds when sharing type selected
-  const fetchBeds = useCallback(async (stId: string) => {
-    setLoadingBeds(true);
-    setBeds([]);
-    setSelectedBedId(null);
-    try {
-      const { data } = await supabase
-        .from("listing_beds")
-        .select("id, bed_number, status, reserved_by, room_id, room:listing_rooms!listing_beds_room_id_fkey(room_number)")
-        .eq("sharing_type_id", stId)
-        .order("bed_number");
-      setBeds((data as unknown as BedWithRoom[]) || []);
-    } finally {
-      setLoadingBeds(false);
-    }
-  }, [supabase]);
-
-  useEffect(() => {
-    if (selectedSTId) fetchBeds(selectedSTId);
-  }, [selectedSTId, fetchBeds]);
-
-  const selectSharingType = (st: SharingTypeWithCounts) => {
-    if (st.available_beds === 0) return;
-    setSelectedSTId(st.id);
-    setSelectedST(st);
-  };
+    return null;
+  }, [sections, selectedBedId]);
 
   const handleReserve = async () => {
-    if (!userId) return;
-    if (!selectedBedId || !selectedSTId || !selectedFloorId) return;
-
+    if (!userId || !selectedBedId || !selectedBedInfo) return;
     setReserving(true);
+
     const { error: resErr } = await supabase.from("bed_reservations").insert({
       bed_id: selectedBedId,
       listing_id: listingId,
-      floor_id: selectedFloorId,
-      sharing_type_id: selectedSTId,
+      floor_id: selectedBedInfo.floor.floor_id,
+      sharing_type_id: selectedBedInfo.room.sharing_type_id,
       tenant_id: userId,
       status: "pending",
       tenant_message: tenantMessage.trim() || null,
@@ -613,179 +563,120 @@ function BedReservationSection({
       return;
     }
 
-    const { error: bedErr } = await supabase
+    await supabase
       .from("listing_beds")
       .update({ status: "pending", reserved_by: userId, reserved_at: new Date().toISOString() })
       .eq("id", selectedBedId);
 
-    if (bedErr) console.error("bed update error", bedErr);
-
     toast.success("Bed reserved! The owner will confirm your booking shortly.");
 
-    // Update UI immediately
-    setBeds(prev =>
-      prev.map(b => b.id === selectedBedId ? { ...b, status: "pending", reserved_by: userId } : b)
-    );
+    setSections(prev => prev.map(section => ({
+      ...section,
+      rooms: section.rooms.map(room => ({
+        ...room,
+        beds: room.beds.map(bed =>
+          bed.id === selectedBedId
+            ? { ...bed, status: "pending" as const, reserved_by: userId }
+            : bed
+        ),
+      })),
+    })));
     setSelectedBedId(null);
     setTenantMessage("");
     setReserving(false);
-
-    // Refresh sharing type counts
-    if (selectedFloorId) fetchSharingTypes(selectedFloorId);
   };
 
-  // Group beds by room
-  const bedsGrouped = useMemo(() => {
-    const groups: Record<string, { room_number: string; beds: BedWithRoom[] }> = {};
-    beds.forEach(bed => {
-      if (!groups[bed.room_id]) {
-        groups[bed.room_id] = {
-          room_number: bed.room?.room_number || bed.room_id.slice(0, 8),
-          beds: [],
-        };
-      }
-      groups[bed.room_id].beds.push(bed);
-    });
-    return groups;
-  }, [beds]);
-
-  const selectedBed = beds.find(b => b.id === selectedBedId);
-  const selectedFloor = floors.find(f => f.id === selectedFloorId);
-
-  if (loadingFloors || floors.length === 0) return null;
+  if (sections.length === 0) return null;
 
   return (
     <div className="mt-6 space-y-4">
       <div className="bg-white border border-[#e7e5e4] rounded-2xl p-5">
-        <div className="flex items-center gap-2 mb-5">
+        <div className="flex items-center gap-2 mb-4">
           <BedDouble className="w-5 h-5 text-[#ea6c0a]" />
           <h2 className="font-display text-lg font-semibold text-[#1c1917]">Choose Your Bed</h2>
         </div>
 
-        {/* Step 1: Floor tabs (only if >1 floor) */}
-        {floors.length > 1 && (
-          <div className="mb-5">
-            <p className="text-xs font-medium text-[#57534e] mb-2">Select Floor</p>
-            <div className="flex gap-2 flex-wrap">
-              {floors.map(floor => (
-                <button
-                  key={floor.id}
-                  onClick={() => setSelectedFloorId(floor.id)}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all ${
-                    selectedFloorId === floor.id
-                      ? "bg-[#fff7ed] border-[#ea6c0a] text-[#c2410c]"
-                      : "border-[#e7e5e4] text-[#57534e] hover:border-[#a8a29e]"
-                  }`}
-                >
-                  {floor.floor_label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Legend */}
+        <div className="flex items-center gap-4 mb-5 flex-wrap text-xs text-[#57534e]">
+          <span className="flex items-center gap-1.5">
+            <span className="w-5 h-5 rounded-md bg-[#e5e7eb] inline-block border border-[#d1d5db]" /> Available
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-5 h-5 rounded-md bg-[#ea6c0a] inline-block" /> Pending
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-5 h-5 rounded-md bg-[#6b7280] inline-block" /> Occupied
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-5 h-5 rounded-md bg-[#3b82f6] inline-block ring-2 ring-[#3b82f6] ring-offset-1" /> Selected
+          </span>
+        </div>
 
-        {/* Step 2: Sharing type cards */}
-        {loadingST ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-[#ea6c0a]" />
-          </div>
-        ) : sharingTypes.length > 0 ? (
-          <div className="mb-5">
-            <p className="text-xs font-medium text-[#57534e] mb-2">Select Room Type</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {sharingTypes.map(st => {
-                const unavailable = st.available_beds === 0;
-                const selected = selectedSTId === st.id;
-                return (
-                  <button
-                    key={st.id}
-                    onClick={() => selectSharingType(st)}
-                    disabled={unavailable}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
-                      selected
-                        ? "border-[#ea6c0a] bg-[#fff7ed]"
-                        : unavailable
-                          ? "border-[#e7e5e4] opacity-50 cursor-not-allowed bg-[#fafaf9]"
-                          : "border-[#e7e5e4] hover:border-[#ea6c0a] bg-white"
-                    }`}
-                  >
-                    <div className={`text-sm font-semibold mb-1 ${selected ? "text-[#c2410c]" : "text-[#1c1917]"}`}>
-                      {SHARING_LABELS[st.sharing_type]}
-                    </div>
-                    <div className={`text-xs ${selected ? "text-[#ea6c0a]" : "text-[#57534e]"}`}>
-                      {formatCurrency(st.rent_per_person)}/mo
-                    </div>
-                    <div className={`text-xs mt-1 ${
-                      unavailable ? "text-[#a8a29e]" : "text-green-600"
-                    }`}>
-                      {unavailable ? "No beds available" : `${st.available_beds} bed${st.available_beds !== 1 ? "s" : ""} free`}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
-        {/* Step 3: Cinema-style bed grid */}
-        {selectedSTId && (
-          <div className="mb-5">
-            <p className="text-xs font-medium text-[#57534e] mb-1">
-              {selectedFloor?.floor_label} — {selectedST ? SHARING_LABELS[selectedST.sharing_type] : ""}
-            </p>
-            <p className="text-xs text-[#a8a29e] mb-3 flex items-center gap-3 flex-wrap">
-              <span className="flex items-center gap-1.5"><BedShape fillColor="#22c55e" label="" size="sm" /> Available</span>
-              <span className="flex items-center gap-1.5"><BedShape fillColor="#ea6c0a" label="" size="sm" /> Pending</span>
-              <span className="flex items-center gap-1.5"><BedShape fillColor="#ef4444" label="" size="sm" /> Occupied</span>
-              <span className="flex items-center gap-1.5"><BedShape fillColor="#3b82f6" label="" size="sm" isSelected /> Selected</span>
-            </p>
-
-            {loadingBeds ? (
-              <div className="flex items-center justify-center py-6">
-                <Loader2 className="w-5 h-5 animate-spin text-[#ea6c0a]" />
+        {/* Cinema grid — all floors at once */}
+        <div className="space-y-6 overflow-x-auto">
+          {sections.map(section => (
+            <div key={section.floor_id}>
+              {/* Floor section header */}
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-xs font-semibold text-[#57534e] uppercase tracking-wide whitespace-nowrap">
+                  {section.floor_label}
+                </span>
+                <div className="flex-1 border-t border-[#e7e5e4]" />
               </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {Object.values(bedsGrouped).map(group => (
-                  <div key={group.room_number} className="bg-[#fafaf9] border border-[#e7e5e4] rounded-xl p-3">
-                    <div className="text-xs font-medium text-[#78716c] mb-2">Room {group.room_number}</div>
-                    <div className="flex flex-wrap gap-2">
-                      {group.beds.map(bed => {
+
+              {/* Room rows */}
+              <div className="space-y-2">
+                {section.rooms.map(room => (
+                  <div key={room.room_id} className="flex items-center gap-3 min-w-0">
+                    {/* Row label */}
+                    <div className="w-24 flex-shrink-0 text-right pr-1">
+                      <div className="text-xs font-semibold text-[#374151]">{room.room_number}</div>
+                      <div className="text-[10px] text-[#a8a29e] leading-tight">
+                        {SHARING_LABELS[room.sharing_type]}
+                      </div>
+                    </div>
+                    {/* Divider */}
+                    <div className="w-px h-8 bg-[#e7e5e4] flex-shrink-0" />
+                    {/* Bed squares */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {room.beds.map(bed => {
                         const isSelected = selectedBedId === bed.id;
+                        const isAvailable = bed.status === "available";
                         const isMyPending = bed.reserved_by === userId && bed.status === "pending";
 
-                        let fillColor = "#22c55e";
+                        let bg = "#e5e7eb";
+                        let fg = "#374151";
+                        let border = "border-[#d1d5db]";
                         let title = "Click to select";
-                        let clickable = true;
 
                         if (isSelected) {
-                          fillColor = "#3b82f6";
+                          bg = "#3b82f6"; fg = "white"; border = "border-[#3b82f6]";
                         } else if (bed.status === "pending") {
-                          fillColor = isMyPending ? "#60a5fa" : "#ea6c0a";
-                          title = isMyPending ? "Your reservation" : "Reserved";
-                          clickable = false;
+                          bg = isMyPending ? "#60a5fa" : "#ea6c0a";
+                          fg = "white"; border = "border-transparent";
+                          title = isMyPending ? "Your reservation" : "Pending";
                         } else if (bed.status === "occupied") {
-                          fillColor = "#ef4444";
+                          bg = "#6b7280"; fg = "white"; border = "border-transparent";
                           title = "Occupied";
-                          clickable = false;
                         }
 
                         return (
                           <button
                             key={bed.id}
                             title={title}
-                            disabled={!clickable && !isSelected}
+                            disabled={!isAvailable && !isSelected}
                             onClick={() => {
-                              if (bed.status !== "available") return;
+                              if (!isAvailable) return;
                               setSelectedBedId(prev => prev === bed.id ? null : bed.id);
                             }}
-                            className={`transition-all focus:outline-none ${clickable || isSelected ? "hover:scale-105 active:scale-95" : "cursor-not-allowed opacity-80"}`}
+                            style={{ backgroundColor: bg, color: fg }}
+                            className={`w-9 h-9 rounded-lg border text-xs font-bold transition-all flex items-center justify-center ${border} ${
+                              isAvailable
+                                ? "hover:scale-110 active:scale-95 cursor-pointer"
+                                : "cursor-not-allowed"
+                            } ${isSelected ? "ring-2 ring-[#3b82f6] ring-offset-1 scale-110" : ""}`}
                           >
-                            <BedShape
-                              fillColor={fillColor}
-                              label={`B${bed.bed_number}`}
-                              isSelected={isSelected}
-                            />
+                            {isSelected ? "✓" : bed.bed_number}
                           </button>
                         );
                       })}
@@ -793,37 +684,37 @@ function BedReservationSection({
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Step 4: Reservation summary */}
-      {selectedBedId && selectedST && selectedFloor && selectedBed && (
+      {/* Reservation summary */}
+      {selectedBedId && selectedBedInfo && (
         <div className="bg-white border border-[#ea6c0a] rounded-2xl p-5">
           <h3 className="font-display font-semibold text-[#1c1917] mb-4">Reserve This Bed</h3>
 
           <div className="bg-[#fff7ed] rounded-xl p-4 mb-4 grid grid-cols-2 gap-3 text-sm">
             <div>
               <div className="text-xs text-[#78716c]">Floor</div>
-              <div className="font-medium text-[#1c1917]">{selectedFloor.floor_label}</div>
+              <div className="font-medium text-[#1c1917]">{selectedBedInfo.floor.floor_label}</div>
             </div>
             <div>
               <div className="text-xs text-[#78716c]">Room</div>
-              <div className="font-medium text-[#1c1917]">{selectedBed.room?.room_number}</div>
+              <div className="font-medium text-[#1c1917]">{selectedBedInfo.room.room_number}</div>
             </div>
             <div>
               <div className="text-xs text-[#78716c]">Bed</div>
-              <div className="font-medium text-[#1c1917]">Bed {selectedBed.bed_number}</div>
+              <div className="font-medium text-[#1c1917]">Bed {selectedBedInfo.bed.bed_number}</div>
             </div>
             <div>
               <div className="text-xs text-[#78716c]">Type</div>
-              <div className="font-medium text-[#1c1917]">{SHARING_LABELS[selectedST.sharing_type]}</div>
+              <div className="font-medium text-[#1c1917]">{SHARING_LABELS[selectedBedInfo.room.sharing_type]}</div>
             </div>
             <div className="col-span-2">
               <div className="text-xs text-[#78716c]">Rent per month</div>
               <div className="font-semibold text-[#ea6c0a] text-lg">
-                {formatCurrency(selectedST.rent_per_person)}
+                {formatCurrency(selectedBedInfo.room.rent_per_person)}
               </div>
             </div>
           </div>
@@ -864,61 +755,6 @@ function BedReservationSection({
         </div>
       )}
     </div>
-  );
-}
-
-// ─── Bed Shape SVG ───────────────────────────────────────────────────────────
-
-function BedShape({
-  fillColor,
-  label,
-  isSelected,
-  size = "md",
-}: {
-  fillColor: string;
-  label: string;
-  isSelected?: boolean;
-  size?: "sm" | "md";
-}) {
-  const cls = size === "sm" ? "w-5 h-6" : "w-10 h-12";
-  const fontSize = size === "sm" ? 0 : 8;
-
-  return (
-    <svg viewBox="0 0 38 48" className={cls} fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Headboard */}
-      <rect x="1" y="1" width="36" height="9" rx="4" fill={fillColor} opacity="0.8" />
-      {/* Mattress body */}
-      <rect x="1" y="12" width="36" height="28" rx="3" fill={fillColor} />
-      {/* Pillow */}
-      <rect x="4" y="15" width="30" height="10" rx="2.5" fill="white" fillOpacity="0.28" />
-      {/* Footboard */}
-      <rect x="1" y="42" width="36" height="5" rx="3" fill={fillColor} opacity="0.7" />
-      {/* Bed number */}
-      {fontSize > 0 && (
-        <text
-          x="19"
-          y="36"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fill="white"
-          fontSize={fontSize}
-          fontWeight="700"
-          fontFamily="system-ui, sans-serif"
-        >
-          {label}
-        </text>
-      )}
-      {/* Checkmark when selected */}
-      {isSelected && size !== "sm" && (
-        <path
-          d="M12 33 L17 38 L27 27"
-          stroke="white"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-    </svg>
   );
 }
 
