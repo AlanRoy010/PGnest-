@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Home, LogOut, Menu } from "lucide-react";
+import { LayoutDashboard, Home, BookOpen, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
@@ -11,8 +11,9 @@ import { getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 
 const NAV_ITEMS = [
-  { href: "/admin/dashboard", label: "Dashboard",  icon: LayoutDashboard },
-  { href: "/admin/listings",  label: "Listings",   icon: Home },
+  { href: "/admin/dashboard",    label: "Dashboard",    icon: LayoutDashboard },
+  { href: "/admin/listings",     label: "Listings",     icon: Home },
+  { href: "/admin/reservations", label: "Reservations", icon: BookOpen },
 ];
 
 export default function AdminLayout({

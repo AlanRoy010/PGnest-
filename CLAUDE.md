@@ -21,29 +21,56 @@ No test suite is currently configured.
 
 ### Auth & Role Enforcement
 
-- `src/middleware.ts` protects `/owner/*`, `/tenant/*`, `/admin/*` routes. Unauthenticated users are redirected to `/login`. Admin routes additionally check `profiles.role` — non-admins are redirected to `/`. Owner/tenant routes are auth-gated only (no cross-role enforcement in middleware).
-- `src/hooks/useUser.ts` — client-side hook that subscribes to Supabase auth state changes and fetches the user's profile. Returns `{ profile, loading, isOwner, isTenant, isAdmin }`.
-- Signup is a two-step flow: step 1 collects name/email/password/role and calls `supabase.auth.signUp()`; step 2 verifies a 6-digit OTP via `supabase.auth.verifyOtp({ type: "signup" })`. Role is passed as `options.data.role` at signup and picked up by the DB trigger that creates the profile.
-- `src/app/auth/callback/route.ts` handles both email OTP (`token_hash`) and OAuth code exchanges, then redirects based on `profiles.role`.
+- `src/middleware.ts` protects `/owner/*`, `/tenant/*`, `/admin/*` routes. Unauthenticated users are redirected to `/login`. Admin routes additionally check `profiles.role` — non-admins are redirected to `/`.
+- `src/hooks/useUser.ts` — client-side hook subscribing to Supabase auth state changes and fetching the user's profile. Returns `{ profile, loading, isOwner, isTenant, isAdmin, email }`. The `supabase` client inside must be memoized with `useMemo(() => createClient(), [])`.
+- Signup is a **custom two-step OTP flow** (not Supabase's built-in email):
+  1. Step 1: collects name/email/password/role, calls `supabase.auth.signUp()` (email confirm disabled in Supabase dashboard, `emailRedirectTo: undefined`), then POSTs to `/api/send-otp`.
+  2. Step 2: user enters 6-digit code, POSTs to `/api/verify-otp`, then calls `supabase.auth.signInWithPassword()` to establish the session.
+- Role is passed as `options.data.role` at signup and picked up by the DB trigger that auto-creates the profile.
+
+### Custom OTP System
+
+- `src/app/api/send-otp/route.ts` — generates a 6-digit OTP, stores it in `email_otps` table (10-minute expiry) via `createAdminClient()`, and sends a branded email via Resend from `"PG Owns <noreply@pgowns.in>"`.
+- `src/app/api/verify-otp/route.ts` — validates the OTP (unused + non-expired), marks it as used, returns `{ success: true/false }`. Uses `createAdminClient()` because the `email_otps` table has `USING (false)` RLS (service role only).
+- The `email_otps` table must be created manually in Supabase SQL Editor (not in the migration file). Schema: `id uuid`, `email text`, `otp text`, `expires_at timestamptz`, `used boolean default false`.
 
 ### Supabase Clients
 
 Two clients in `src/lib/supabase/`:
-- `client.ts` — browser client for "use client" components
-- `server.ts` — async server client (respects RLS) + `createAdminClient()` (bypasses RLS via service role key, server-side only)
+- `client.ts` — browser client for `"use client"` components. Always memoize: `const supabase = useMemo(() => createClient(), [])`.
+- `server.ts` — async server client (respects RLS) + `createAdminClient()` (bypasses RLS via service role key, server-side only).
+
+### React Hooks Pattern
+
+All client components that fetch data must follow this pattern to satisfy `react-hooks/exhaustive-deps`:
+```ts
+const supabase = useMemo(() => createClient(), []);
+
+const fetchData = useCallback(async () => {
+  // fetch using supabase
+}, [supabase, /* other deps */]);
+
+useEffect(() => {
+  fetchData();
+}, [fetchData]);
+```
+Never define async functions directly inside `useEffect`. Never use `as any` — define proper TypeScript interfaces instead.
 
 ### Route Structure
 
 ```
 src/app/
-  page.tsx                  # Landing page
+  page.tsx                  # Landing page (client component, carousel + search)
   login/ signup/            # Auth pages
   auth/callback/            # OAuth callback
   admin/                    # Admin dashboard (listings overview)
   owner/                    # Owner dashboard (listings, bookings, deposits)
   tenant/                   # Tenant dashboard (search, bookings, deposit)
     listing/[id]/           # Dynamic listing detail
-  api/visit/                # Analytics endpoint
+  api/
+    send-otp/               # Custom OTP email sender (Resend)
+    verify-otp/             # OTP validator
+    visit/                  # Analytics endpoint
 ```
 
 Each role group has its own `layout.tsx` with a sidebar navigation.
@@ -61,6 +88,7 @@ Schema is in `supabase/migrations/001_initial_schema.sql`. All tables have RLS e
 | `deposits` | Security deposit per booking (auto-created when booking goes active) |
 | `deposit_deductions` | Deduction claims with evidence photos |
 | `notifications` | User notifications |
+| `email_otps` | Custom OTP records (created manually, not in migration) |
 
 Key DB behaviors driven by triggers:
 - Profile auto-created on `auth.users` insert
@@ -70,7 +98,7 @@ Key DB behaviors driven by triggers:
 
 ### Types
 
-All shared TypeScript types are in `src/types/index.ts` — enums for status values, database entity interfaces, form interfaces, and Razorpay types.
+All shared TypeScript types are in `src/types/index.ts` — enums for status values, database entity interfaces, form interfaces, and Razorpay types. Use these types and the `Gender`, `Listing["furnishing"]`, `Listing["room_type"]` patterns instead of `as any`.
 
 ### Utilities (`src/lib/utils/index.ts`)
 
@@ -79,6 +107,7 @@ All shared TypeScript types are in `src/types/index.ts` — enums for status val
 - `AMENITY_LABELS` — display names for amenity keys
 - `AREAS_MUMBAI` — 28 Mumbai area names for filters
 - `BOOKING_STATUS_CONFIG` / `DEDUCTION_STATUS_CONFIG` — color configs for status badges
+- `getInitials()` — initials from full name string
 
 ### UI Libraries
 
@@ -88,12 +117,19 @@ All shared TypeScript types are in `src/types/index.ts` — enums for status val
 - **lucide-react** — icons
 - **date-fns** — date formatting
 
-### Styling
+### Brand & Styling
 
-Custom Tailwind theme with:
-- `brand-*` colors (orange scale, primary actions)
-- `surface-*` colors (neutral gray scale, UI backgrounds)
+**Logo**: `public/logo.svg` — pigeon/PG mark SVG. ViewBox is cropped to content (`330 325 365 375`). Always use `next/image` `<Image>` component, not `<img>`. On dark backgrounds add `className="brightness-0 invert"`. Standard sizes: 44px (main nav), 36px (sidebar), 40px (auth pages).
+
+**Fonts**: Outfit (display/headings, `font-display` class) + Inter (body). Loaded via `next/font/google` in `layout.tsx`.
+
+**Color system** (Tailwind theme):
+- `forest-*` — green scale centered on `#1a3d2b` (primary brand, buttons, active states)
+- `amber-*` — amber/gold scale for accents
+- `surface-*` — cool gray scale for UI backgrounds
 - Custom animations: `fade-up`, `fade-in`, `shimmer`
+
+**Email sender**: Always use `"PG Owns <noreply@pgowns.in>"` (note the space between PG and Owns).
 
 ### Environment Variables
 
