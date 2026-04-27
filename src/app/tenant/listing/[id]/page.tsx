@@ -731,11 +731,11 @@ function BedReservationSection({
             <p className="text-xs font-medium text-[#57534e] mb-1">
               {selectedFloor?.floor_label} — {selectedST ? SHARING_LABELS[selectedST.sharing_type] : ""}
             </p>
-            <p className="text-xs text-[#a8a29e] mb-3 flex items-center gap-3">
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> Available</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-[#ea6c0a] inline-block" /> Pending</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-red-500 inline-block" /> Occupied</span>
-              <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-500 inline-block" /> Selected</span>
+            <p className="text-xs text-[#a8a29e] mb-3 flex items-center gap-3 flex-wrap">
+              <span className="flex items-center gap-1.5"><BedShape fillColor="#22c55e" label="" size="sm" /> Available</span>
+              <span className="flex items-center gap-1.5"><BedShape fillColor="#ea6c0a" label="" size="sm" /> Pending</span>
+              <span className="flex items-center gap-1.5"><BedShape fillColor="#ef4444" label="" size="sm" /> Occupied</span>
+              <span className="flex items-center gap-1.5"><BedShape fillColor="#3b82f6" label="" size="sm" isSelected /> Selected</span>
             </p>
 
             {loadingBeds ? (
@@ -752,36 +752,38 @@ function BedReservationSection({
                         const isSelected = selectedBedId === bed.id;
                         const isMyPending = bed.reserved_by === userId && bed.status === "pending";
 
-                        let bgColor = "bg-green-500 hover:bg-green-600 cursor-pointer";
+                        let fillColor = "#22c55e";
                         let title = "Click to select";
-                        let content: React.ReactNode = `B${bed.bed_number}`;
+                        let clickable = true;
 
                         if (isSelected) {
-                          bgColor = "bg-blue-500 cursor-pointer";
-                          content = <><span className="text-[9px] block">B{bed.bed_number}</span><CheckCircle className="w-3 h-3 mx-auto" /></>;
+                          fillColor = "#3b82f6";
                         } else if (bed.status === "pending") {
-                          bgColor = isMyPending
-                            ? "bg-blue-400 cursor-default"
-                            : "bg-[#ea6c0a] cursor-not-allowed";
+                          fillColor = isMyPending ? "#60a5fa" : "#ea6c0a";
                           title = isMyPending ? "Your reservation" : "Reserved";
-                          content = `B${bed.bed_number}`;
+                          clickable = false;
                         } else if (bed.status === "occupied") {
-                          bgColor = "bg-red-500 cursor-not-allowed";
+                          fillColor = "#ef4444";
                           title = "Occupied";
+                          clickable = false;
                         }
 
                         return (
                           <button
                             key={bed.id}
                             title={title}
-                            disabled={bed.status !== "available" && !isSelected}
+                            disabled={!clickable && !isSelected}
                             onClick={() => {
                               if (bed.status !== "available") return;
                               setSelectedBedId(prev => prev === bed.id ? null : bed.id);
                             }}
-                            className={`w-10 h-10 rounded-full text-white text-[10px] font-semibold flex items-center justify-center flex-col transition-all ${bgColor}`}
+                            className={`transition-all focus:outline-none ${clickable || isSelected ? "hover:scale-105 active:scale-95" : "cursor-not-allowed opacity-80"}`}
                           >
-                            {content}
+                            <BedShape
+                              fillColor={fillColor}
+                              label={`B${bed.bed_number}`}
+                              isSelected={isSelected}
+                            />
                           </button>
                         );
                       })}
@@ -860,6 +862,61 @@ function BedReservationSection({
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Bed Shape SVG ───────────────────────────────────────────────────────────
+
+function BedShape({
+  fillColor,
+  label,
+  isSelected,
+  size = "md",
+}: {
+  fillColor: string;
+  label: string;
+  isSelected?: boolean;
+  size?: "sm" | "md";
+}) {
+  const cls = size === "sm" ? "w-5 h-6" : "w-10 h-12";
+  const fontSize = size === "sm" ? 0 : 8;
+
+  return (
+    <svg viewBox="0 0 38 48" className={cls} fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Headboard */}
+      <rect x="1" y="1" width="36" height="9" rx="4" fill={fillColor} opacity="0.8" />
+      {/* Mattress body */}
+      <rect x="1" y="12" width="36" height="28" rx="3" fill={fillColor} />
+      {/* Pillow */}
+      <rect x="4" y="15" width="30" height="10" rx="2.5" fill="white" fillOpacity="0.28" />
+      {/* Footboard */}
+      <rect x="1" y="42" width="36" height="5" rx="3" fill={fillColor} opacity="0.7" />
+      {/* Bed number */}
+      {fontSize > 0 && (
+        <text
+          x="19"
+          y="36"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="white"
+          fontSize={fontSize}
+          fontWeight="700"
+          fontFamily="system-ui, sans-serif"
+        >
+          {label}
+        </text>
+      )}
+      {/* Checkmark when selected */}
+      {isSelected && size !== "sm" && (
+        <path
+          d="M12 33 L17 38 L27 27"
+          stroke="white"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+    </svg>
   );
 }
 
