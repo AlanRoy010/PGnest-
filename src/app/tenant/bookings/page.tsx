@@ -38,23 +38,26 @@ export default function TenantBookingsPage() {
   const [loading, setLoading] = useState(true);
 
   const fetchReservations = useCallback(async () => {
-    if (!profile) return;
-    const { data } = await supabase
-      .from("bed_reservations")
-      .select(`
-        id, status, tenant_message, created_at,
-        bed:listing_beds!bed_reservations_bed_id_fkey(
-          bed_number,
-          room:listing_rooms!listing_beds_room_id_fkey(room_number)
-        ),
-        floor:listing_floors!bed_reservations_floor_id_fkey(floor_label),
-        sharing_type:listing_sharing_types!bed_reservations_sharing_type_id_fkey(sharing_type, rent_per_person),
-        listing:listings!bed_reservations_listing_id_fkey(title, area)
-      `)
-      .eq("tenant_id", profile.id)
-      .order("created_at", { ascending: false });
-    setReservations((data as unknown as TenantReservation[]) || []);
-    setLoading(false);
+    if (!profile) { setLoading(false); return; }
+    try {
+      const { data } = await supabase
+        .from("bed_reservations")
+        .select(`
+          id, status, tenant_message, created_at,
+          bed:listing_beds!bed_reservations_bed_id_fkey(
+            bed_number,
+            room:listing_rooms!listing_beds_room_id_fkey(room_number)
+          ),
+          floor:listing_floors!bed_reservations_floor_id_fkey(floor_label),
+          sharing_type:listing_sharing_types!bed_reservations_sharing_type_id_fkey(sharing_type, rent_per_person),
+          listing:listings!bed_reservations_listing_id_fkey(title, area)
+        `)
+        .eq("tenant_id", profile.id)
+        .order("created_at", { ascending: false });
+      setReservations((data as unknown as TenantReservation[]) || []);
+    } finally {
+      setLoading(false);
+    }
   }, [supabase, profile]);
 
   useEffect(() => {

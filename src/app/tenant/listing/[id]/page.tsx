@@ -486,7 +486,7 @@ function BedReservationSection({
   const [beds, setBeds] = useState<BedWithRoom[]>([]);
   const [selectedBedId, setSelectedBedId] = useState<string | null>(null);
   const [tenantMessage, setTenantMessage] = useState("");
-  const [loadingFloors, setLoadingFloors] = useState(true);
+  const [loadingFloors, setLoadingFloors] = useState(false);
   const [loadingST, setLoadingST] = useState(false);
   const [loadingBeds, setLoadingBeds] = useState(false);
   const [reserving, setReserving] = useState(false);
@@ -494,30 +494,35 @@ function BedReservationSection({
   // Fetch floors with active sharing types
   const fetchFloors = useCallback(async () => {
     setLoadingFloors(true);
-    const { data } = await supabase
-      .from("listing_floors")
-      .select("id, floor_number, floor_label, listing_sharing_types(id, is_active)")
-      .eq("listing_id", listingId)
-      .order("floor_number");
+    try {
+      const { data } = await supabase
+        .from("listing_floors")
+        .select("id, floor_number, floor_label, listing_sharing_types(id, is_active)")
+        .eq("listing_id", listingId)
+        .order("floor_number");
 
-    interface RawFloor {
-      id: string;
-      floor_number: number;
-      floor_label: string;
-      listing_sharing_types: { id: string; is_active: boolean }[];
+      interface RawFloor {
+        id: string;
+        floor_number: number;
+        floor_label: string;
+        listing_sharing_types: { id: string; is_active: boolean }[];
+      }
+
+      const active = ((data as RawFloor[]) || []).filter(f =>
+        f.listing_sharing_types?.some(st => st.is_active)
+      );
+      const cleaned: Floor[] = active.map(f => ({
+        id: f.id,
+        floor_number: f.floor_number,
+        floor_label: f.floor_label,
+      }));
+      setFloors(cleaned);
+      return cleaned;
+    } catch {
+      return [] as Floor[];
+    } finally {
+      setLoadingFloors(false);
     }
-
-    const active = ((data as RawFloor[]) || []).filter(f =>
-      f.listing_sharing_types?.some(st => st.is_active)
-    );
-    const cleaned: Floor[] = active.map(f => ({
-      id: f.id,
-      floor_number: f.floor_number,
-      floor_label: f.floor_label,
-    }));
-    setFloors(cleaned);
-    setLoadingFloors(false);
-    return cleaned;
   }, [supabase, listingId]);
 
   useEffect(() => {
@@ -534,24 +539,26 @@ function BedReservationSection({
     setSelectedST(null);
     setBeds([]);
     setSelectedBedId(null);
+    try {
+      const { data } = await supabase
+        .from("listing_sharing_types")
+        .select("id, sharing_type, rent_per_person, beds_per_room, is_active, beds:listing_beds(id, status)")
+        .eq("floor_id", floorId)
+        .eq("is_active", true);
 
-    const { data } = await supabase
-      .from("listing_sharing_types")
-      .select("id, sharing_type, rent_per_person, beds_per_room, is_active, beds:listing_beds(id, status)")
-      .eq("floor_id", floorId)
-      .eq("is_active", true);
-
-    const processed: SharingTypeWithCounts[] = ((data as RawSharingType[]) || []).map(st => ({
-      id: st.id,
-      sharing_type: st.sharing_type,
-      rent_per_person: st.rent_per_person,
-      beds_per_room: st.beds_per_room,
-      is_active: st.is_active,
-      total_beds: st.beds?.length || 0,
-      available_beds: (st.beds || []).filter(b => b.status === "available").length,
-    }));
-    setSharingTypes(processed);
-    setLoadingST(false);
+      const processed: SharingTypeWithCounts[] = ((data as RawSharingType[]) || []).map(st => ({
+        id: st.id,
+        sharing_type: st.sharing_type,
+        rent_per_person: st.rent_per_person,
+        beds_per_room: st.beds_per_room,
+        is_active: st.is_active,
+        total_beds: st.beds?.length || 0,
+        available_beds: (st.beds || []).filter(b => b.status === "available").length,
+      }));
+      setSharingTypes(processed);
+    } finally {
+      setLoadingST(false);
+    }
   }, [supabase]);
 
   useEffect(() => {
@@ -563,15 +570,16 @@ function BedReservationSection({
     setLoadingBeds(true);
     setBeds([]);
     setSelectedBedId(null);
-
-    const { data } = await supabase
-      .from("listing_beds")
-      .select("id, bed_number, status, reserved_by, room_id, room:listing_rooms!listing_beds_room_id_fkey(room_number)")
-      .eq("sharing_type_id", stId)
-      .order("bed_number");
-
-    setBeds((data as unknown as BedWithRoom[]) || []);
-    setLoadingBeds(false);
+    try {
+      const { data } = await supabase
+        .from("listing_beds")
+        .select("id, bed_number, status, reserved_by, room_id, room:listing_rooms!listing_beds_room_id_fkey(room_number)")
+        .eq("sharing_type_id", stId)
+        .order("bed_number");
+      setBeds((data as unknown as BedWithRoom[]) || []);
+    } finally {
+      setLoadingBeds(false);
+    }
   }, [supabase]);
 
   useEffect(() => {
@@ -644,13 +652,7 @@ function BedReservationSection({
   const selectedBed = beds.find(b => b.id === selectedBedId);
   const selectedFloor = floors.find(f => f.id === selectedFloorId);
 
-  if (loadingFloors) return (
-    <div className="mt-6 bg-white border border-[#e7e5e4] rounded-2xl p-6 flex items-center justify-center">
-      <Loader2 className="w-5 h-5 animate-spin text-[#ea6c0a]" />
-    </div>
-  );
-
-  if (floors.length === 0) return null;
+  if (loadingFloors || floors.length === 0) return null;
 
   return (
     <div className="mt-6 space-y-4">
