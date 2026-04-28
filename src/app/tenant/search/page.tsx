@@ -8,19 +8,16 @@ import {
 } from "lucide-react";
 import type { Listing } from "@/types";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 
-function SearchPage() {
+export default function TenantSearchPage() {
   const supabase = useMemo(() => createClient(), []);
-  const searchParams = useSearchParams();
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
   // Filters
-  const [area, setArea] = useState(searchParams.get("area") || "");
+  const [area, setArea] = useState("");
   const [minRent, setMinRent] = useState("");
   const [maxRent, setMaxRent] = useState("");
   const [gender, setGender] = useState("");
@@ -335,16 +332,5 @@ function SearchPage() {
   );
 }
 
-export default function TenantSearchPage() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-[#ea6c0a]" />
-      </div>
-    }>
-      <SearchPage />
-    </Suspense>
-  );
-}
 
 const selectCls = "w-full border border-[#e7e5e4] rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#ea6c0a] focus:ring-1 focus:ring-[#ea6c0a] transition-all bg-white text-[#1c1917]";
