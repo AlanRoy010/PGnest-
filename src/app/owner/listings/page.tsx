@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import FallingFeathers, { spawnFeathers } from "@/components/FallingFeathers";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import {
@@ -35,6 +36,7 @@ export default function AdminListingsPage() {
   const [form, setForm] = useState<CreateListingForm>(BLANK_FORM);
   const [saving, setSaving] = useState(false);
   const [ruleInput, setRuleInput] = useState("");
+  const [feathers, setFeathers] = useState<ReturnType<typeof spawnFeathers>>([]);
 
   // Image upload state
   const [photos, setPhotos] = useState<string[]>([]);
@@ -164,7 +166,14 @@ export default function AdminListingsPage() {
         .from("listings")
         .insert({ ...listingData, owner_id: profile!.id });
       if (error) { toast.error("Failed to create listing: " + error.message); }
-      else { toast.success("Listing created!"); fetchListings(); setShowForm(false); }
+      else {
+        toast.success("Listing created!");
+        const f = spawnFeathers(16);
+        setFeathers(f);
+        setTimeout(() => setFeathers([]), 5000);
+        fetchListings();
+        setShowForm(false);
+      }
     }
     setSaving(false);
   };
@@ -199,25 +208,26 @@ export default function AdminListingsPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <Loader2 className="w-6 h-6 animate-spin text-[#ea6c0a]" />
+      <Loader2 className="w-6 h-6 animate-spin text-[#E8734A]" />
     </div>
   );
 
   return (
     <div className="max-w-4xl mx-auto">
+      <FallingFeathers feathers={feathers} />
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-display text-2xl font-semibold text-[#1c1917]">
+          <h1 className="font-display text-2xl font-semibold text-[#2C3040]">
             All Listings
           </h1>
-          <p className="text-sm text-[#78716c] mt-0.5">
+          <p className="text-sm text-[#7A7A8A] mt-0.5">
             {listings.length} listing{listings.length !== 1 ? "s" : ""} on the platform
           </p>
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center gap-2 bg-[#ea6c0a] text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-[#c2410c] transition-colors"
+          className="feather-btn px-4 py-2.5 text-sm"
         >
           <Plus className="w-4 h-4" /> New listing
         </button>
@@ -225,11 +235,11 @@ export default function AdminListingsPage() {
 
       {/* Empty state */}
       {listings.length === 0 && !showForm && (
-        <div className="text-center py-20 bg-white border border-[#e7e5e4] rounded-2xl">
-          <Home className="w-10 h-10 text-[#d6d3d1] mx-auto mb-4" />
-          <h3 className="font-display font-semibold text-[#1c1917] mb-1">No listings yet</h3>
-          <p className="text-sm text-[#78716c] mb-6">Create the first listing for the platform</p>
-          <button onClick={openCreate} className="inline-flex items-center gap-2 bg-[#ea6c0a] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#c2410c] transition-colors">
+        <div className="text-center py-20 bg-[#FDFBF8] border border-[#E2DDD6] rounded-2xl">
+          <Home className="w-10 h-10 text-[#C4BAB0] mx-auto mb-4" />
+          <h3 className="font-display font-semibold text-[#2C3040] mb-1">No listings yet</h3>
+          <p className="text-sm text-[#7A7A8A] mb-6">Create the first listing for the platform</p>
+          <button onClick={openCreate} className="feather-btn px-5 py-2.5 text-sm">
             <Plus className="w-4 h-4" /> Create listing
           </button>
         </div>
@@ -517,13 +527,14 @@ export default function AdminListingsPage() {
               </Field>
             </div>
 
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#e7e5e4]">
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E2DDD6]">
               <button onClick={() => setShowForm(false)}
-                className="px-4 py-2.5 text-sm font-medium text-[#57534e] hover:text-[#1c1917] transition-colors">
+                className="feather-btn feather-btn-ghost px-4 py-2.5 text-sm">
                 Cancel
               </button>
               <button onClick={saveListing} disabled={saving}
-                className="flex items-center gap-2 bg-[#ea6c0a] text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-[#c2410c] transition-colors disabled:opacity-50">
+                className="feather-btn px-5 py-2.5 text-sm"
+                style={{ opacity: saving ? 0.5 : 1 }}>
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {editingId ? "Save changes" : "Create listing"}
               </button>
@@ -535,7 +546,7 @@ export default function AdminListingsPage() {
   );
 }
 
-const inputCls = "w-full border border-[#e7e5e4] rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#ea6c0a] focus:ring-1 focus:ring-[#ea6c0a] transition-all bg-white text-[#1c1917] placeholder:text-[#a8a29e]";
+const inputCls = "w-full border border-[#E2DDD6] rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#E8734A] focus:ring-1 focus:ring-[#E8734A] transition-all bg-[#FDFBF8] text-[#2C3040] placeholder:text-[#A09488]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

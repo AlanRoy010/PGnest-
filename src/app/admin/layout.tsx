@@ -47,13 +47,13 @@ export default function AdminLayout({
 
   const Sidebar = () => {
     return (
-      <div className="flex flex-col h-full bg-[#1c1917] border-r border-[#292524]">
+      <div className="flex flex-col h-full bg-[#364466] border-r border-[#243052]">
         {/* Logo */}
-        <div className="px-6 py-5 border-b border-[#292524]">
-          <Link href="/" className="font-display text-xl font-semibold text-white">
-            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} /><span className="font-display font-black">Owns</span>
+        <div className="px-6 py-5 border-b border-[#243052]">
+          <Link href="/" className="flex items-center gap-2 font-display text-xl font-semibold text-white">
+            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} className="brightness-0 invert" /><span className="font-display font-black">Owns</span>
           </Link>
-          <div className="mt-0.5 text-xs text-[#78716c]">Admin Panel</div>
+          <div className="mt-0.5 text-xs text-[#95A8C4]">Admin Panel</div>
         </div>
 
         {/* Navigation */}
@@ -67,8 +67,8 @@ export default function AdminLayout({
                 onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
-                    ? "bg-[#ea6c0a] text-white"
-                    : "text-[#a8a29e] hover:bg-[#292524] hover:text-white"
+                    ? "bg-[#E8734A] text-white"
+                    : "text-[#B8C4D8] hover:bg-[#243052] hover:text-white"
                 }`}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -79,13 +79,13 @@ export default function AdminLayout({
         </nav>
 
         {/* Profile + signout */}
-        <div className="px-3 py-4 border-t border-[#292524] space-y-1">
+        <div className="px-3 py-4 border-t border-[#243052] space-y-1">
           <Link
             href="/admin/profile"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#292524] transition-all"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#243052] transition-all"
           >
-            <div className="w-8 h-8 rounded-full bg-[#ea6c0a] flex items-center justify-center text-xs font-semibold text-white">
+            <div className="w-8 h-8 rounded-full bg-[#E8734A] flex items-center justify-center text-xs font-semibold text-white">
               {profile?.full_name
                 ? getInitials(profile.full_name)
                 : email
@@ -96,12 +96,12 @@ export default function AdminLayout({
               <div className="text-sm font-medium text-white truncate">
                 {profile?.full_name || (email ? email.split("@")[0] : "Admin")}
               </div>
-              <div className="text-xs text-[#78716c]">Administrator</div>
+              <div className="text-xs text-[#95A8C4]">Administrator</div>
             </div>
           </Link>
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#a8a29e] hover:bg-[#292524] hover:text-white transition-all w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#B8C4D8] hover:bg-[#243052] hover:text-white transition-all w-full"
           >
             <LogOut className="w-4 h-4" />
             Sign out
@@ -112,7 +112,7 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] flex">
+    <div className="min-h-screen bg-[#F7F4EF] flex">
       {/* Desktop sidebar */}
       <div className="hidden md:flex w-56 flex-shrink-0 fixed h-screen">
         <Sidebar />
@@ -133,11 +133,11 @@ export default function AdminLayout({
 
       {/* Main content */}
       <div className="flex-1 md:ml-56 flex flex-col min-h-screen">
-        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#1c1917] border-b border-[#292524]">
-          <Link href="/" className="font-display text-lg font-semibold text-white">
-            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} /><span className="font-display font-black">Owns</span>
+        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#364466] border-b border-[#243052]">
+          <Link href="/" className="flex items-center gap-2 font-display text-lg font-semibold text-white">
+            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} className="brightness-0 invert" /><span className="font-display font-black">Owns</span>
           </Link>
-          <button onClick={() => setMobileOpen(true)} className="p-2 text-[#a8a29e]">
+          <button onClick={() => setMobileOpen(true)} className="p-2 text-[#B8C4D8]">
             <Menu className="w-5 h-5" />
           </button>
         </div>

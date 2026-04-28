@@ -51,15 +51,15 @@ export default function TenantLayout({
 
   const Sidebar = () => {
     return (
-      <div className="flex flex-col h-full bg-white border-r border-[#e7e5e4]">
-        <div className="px-6 py-5 border-b border-[#e7e5e4]">
+      <div className="flex flex-col h-full bg-[#FDFBF8] border-r border-[#E2DDD6]">
+        <div className="px-6 py-5 border-b border-[#E2DDD6]">
           <Link
             href="/"
-            className="font-display text-xl font-semibold text-[#1c1917]"
+            className="flex items-center gap-2 font-display text-xl font-semibold text-[#2C3040]"
           >
             <Image src="/logo.svg" alt="PGOwns" width={36} height={36} /><span className="font-display font-black">Owns</span>
           </Link>
-          <div className="mt-0.5 text-xs text-[#a8a29e]">Tenant Dashboard</div>
+          <div className="mt-0.5 text-xs text-[#A09488]">Tenant Dashboard</div>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -72,8 +72,8 @@ export default function TenantLayout({
                 onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
-                    ? "bg-[#fff7ed] text-[#c2410c]"
-                    : "text-[#57534e] hover:bg-[#f5f5f4] hover:text-[#1c1917]"
+                    ? "bg-[#FDF0EB] text-[#C5522E]"
+                    : "text-[#5C5450] hover:bg-[#EDE8E0] hover:text-[#2C3040]"
                 }`}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -83,13 +83,13 @@ export default function TenantLayout({
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-[#e7e5e4] space-y-1">
+        <div className="px-3 py-4 border-t border-[#E2DDD6] space-y-1">
           <Link
             href="/tenant/profile"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#f5f5f4] transition-all"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#EDE8E0] transition-all"
           >
-            <div className="w-8 h-8 rounded-full bg-[#fed7aa] flex items-center justify-center text-xs font-semibold text-[#c2410c]">
+            <div className="w-8 h-8 rounded-full bg-[#FDF0EB] flex items-center justify-center text-xs font-semibold text-[#C5522E]">
               {profile?.full_name
                 ? getInitials(profile.full_name)
                 : email
@@ -97,17 +97,17 @@ export default function TenantLayout({
                   : "?"}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-[#1c1917] truncate">
+              <div className="text-sm font-medium text-[#2C3040] truncate">
                 {profile?.full_name || (email ? email.split("@")[0] : "My Profile")}
               </div>
-              <div className="text-xs text-[#a8a29e] truncate">
+              <div className="text-xs text-[#A09488] truncate">
                 {profile?.phone || email}
               </div>
             </div>
           </Link>
           <button
             onClick={handleSignOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#57534e] hover:bg-[#f5f5f4] hover:text-[#1c1917] transition-all w-full"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#5C5450] hover:bg-[#EDE8E0] hover:text-[#2C3040] transition-all w-full"
           >
             <LogOut className="w-4 h-4" />
             Sign out
@@ -118,7 +118,7 @@ export default function TenantLayout({
   };
 
   return (
-    <div className="min-h-screen bg-[#fafaf9] flex">
+    <div className="min-h-screen bg-[#F7F4EF] flex">
       {/* Desktop sidebar */}
       <div className="hidden md:flex w-56 flex-shrink-0 fixed h-screen">
         <Sidebar />
@@ -139,10 +139,10 @@ export default function TenantLayout({
 
       {/* Main content */}
       <div className="flex-1 md:ml-56 flex flex-col min-h-screen">
-        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-[#e7e5e4]">
+        <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#FDFBF8] border-b border-[#E2DDD6]">
           <Link
             href="/"
-            className="font-display text-lg font-semibold text-[#1c1917]"
+            className="flex items-center gap-2 font-display text-lg font-semibold text-[#2C3040]"
           >
             <Image src="/logo.svg" alt="PGOwns" width={36} height={36} /><span className="font-display font-black">Owns</span>
           </Link>

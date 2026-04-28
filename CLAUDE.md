@@ -121,13 +121,22 @@ All shared TypeScript types are in `src/types/index.ts` — enums for status val
 
 **Logo**: `public/logo.svg` — pigeon/PG mark SVG. ViewBox is cropped to content (`330 325 365 375`). Always use `next/image` `<Image>` component, not `<img>`. On dark backgrounds add `className="brightness-0 invert"`. Standard sizes: 44px (main nav), 36px (sidebar), 40px (auth pages).
 
-**Fonts**: Outfit (display/headings, `font-display` class) + Inter (body). Loaded via `next/font/google` in `layout.tsx`.
+**Fonts**: Fraunces (display/headings, `font-display` class, serif with italic support) + DM Sans (body). Loaded via CSS `@import` in `globals.css`.
 
-**Color system** (Tailwind theme):
-- `forest-*` — green scale centered on `#1a3d2b` (primary brand, buttons, active states)
-- `amber-*` — amber/gold scale for accents
-- `surface-*` — cool gray scale for UI backgrounds
+**Color system** (Tailwind theme — pigeon-inspired palette):
+- `brand-*` — coral scale centered on `#E8734A` (primary CTAs, active states, prices)
+- `wing-*` — blue-grey scale centered on `#6B7FA3` (sidebar icons, category tiles, UI elements)
+- `iridescent-*` — purple scale centered on `#7C6E9E` (accent, gradient third stop)
+- `surface-*` — warm grey scale (body copy, borders, backgrounds)
+- `forest-*` — kept for backward compat; use brand/wing/iridescent for new code
+- Page bg: `#F7F4EF`, card bg: `#FDFBF8`, border: `#E2DDD6`, primary text: `#2C3040`
+- Sidebar active state: `bg-[#FDF0EB] text-[#C5522E]` (coral tint)
+- Tricolor gradient bar on cards: `bg-gradient-to-r from-[#E8734A] via-[#6B7FA3] to-[#7C6E9E]`
 - Custom animations: `fade-up`, `fade-in`, `shimmer`
+- `.feather-card` utility class adds the tricolor top bar
+- `.feather-btn` CSS class — parallelogram clip-path button (`polygon(14px 0%, 100% 0%, calc(100% - 14px) 100%, 0% 100%)`). Variants: `.feather-btn-wing` (blue-grey), `.feather-btn-ghost` (outline). Use on all primary action buttons.
+- `.falling-feather` + `@keyframes feather-fall` — falling feather animation. Use `spawnFeathers()` from `src/components/FallingFeathers.tsx` and render `<FallingFeathers feathers={...} />` on key success moments (booking, creating listing).
+- `src/components/FallingFeathers.tsx` — exports `FallingFeathers` (default), `spawnFeathers()`, `FeatherSVG`. `FeatherSVG` is used as a subtle watermark decoration on photo headers and dark modal headers.
 
 **Email sender**: Always use `"PG Owns <noreply@pgowns.in>"` (note the space between PG and Owns).
 
