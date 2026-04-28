@@ -93,12 +93,15 @@ export default function AdminListingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchListings = useCallback(async () => {
-    const { data } = await supabase
-      .from("listings")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setListings(data || []);
-    setLoading(false);
+    try {
+      const { data } = await supabase
+        .from("listings")
+        .select("*")
+        .order("created_at", { ascending: false });
+      setListings(data || []);
+    } finally {
+      setLoading(false);
+    }
   }, [supabase]);
 
   useEffect(() => {

@@ -15,21 +15,23 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [users, listings, bookings, activeBookings] = await Promise.all([
-        supabase.from("profiles").select("id", { count: "exact" }),
-        supabase.from("listings").select("id", { count: "exact" }),
-        supabase.from("bookings").select("id", { count: "exact" }),
-        supabase.from("bookings").select("id", { count: "exact" }).eq("status", "active"),
-      ]);
-
-      setStats({
-        totalUsers: users.count || 0,
-        totalListings: listings.count || 0,
-        totalBookings: bookings.count || 0,
-        activeBookings: activeBookings.count || 0,
-      });
+      try {
+        const [users, listings, bookings, activeBookings] = await Promise.all([
+          supabase.from("profiles").select("id", { count: "exact" }),
+          supabase.from("listings").select("id", { count: "exact" }),
+          supabase.from("bookings").select("id", { count: "exact" }),
+          supabase.from("bookings").select("id", { count: "exact" }).eq("status", "active"),
+        ]);
+        setStats({
+          totalUsers: users.count || 0,
+          totalListings: listings.count || 0,
+          totalBookings: bookings.count || 0,
+          activeBookings: activeBookings.count || 0,
+        });
+      } catch {
+        // stats stay at 0 on error
+      }
     };
-
     fetchStats();
   }, [supabase]);
 

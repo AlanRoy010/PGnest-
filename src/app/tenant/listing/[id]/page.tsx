@@ -126,27 +126,31 @@ export default function ListingDetailPage() {
     if (!visitTime) { toast.error("Select a time slot"); return; }
 
     setVisitLoading(true);
-    const res = await fetch("/api/visit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        listing_id: listing!.id,
-        listing_title: listing!.title,
-        listing_area: listing!.area,
-        full_name: visitName,
-        email: visitEmail,
-        phone: visitPhone,
-        visit_date: visitDate,
-        visit_time: visitTime,
-        user_id: profile?.id || null,
-        owner_phone: listing!.owner?.phone || null,
-        owner_name: listing!.owner?.full_name || null,
-      }),
-    });
-    setVisitLoading(false);
-
-    if (!res.ok) { toast.error("Failed to schedule visit. Try again."); return; }
-    setVisitBooked(true);
+    try {
+      const res = await fetch("/api/visit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listing_id: listing!.id,
+          listing_title: listing!.title,
+          listing_area: listing!.area,
+          full_name: visitName,
+          email: visitEmail,
+          phone: visitPhone,
+          visit_date: visitDate,
+          visit_time: visitTime,
+          user_id: profile?.id || null,
+          owner_phone: listing!.owner?.phone || null,
+          owner_name: listing!.owner?.full_name || null,
+        }),
+      });
+      if (!res.ok) { toast.error("Failed to schedule visit. Try again."); return; }
+      setVisitBooked(true);
+    } catch {
+      toast.error("Failed to schedule visit. Try again.");
+    } finally {
+      setVisitLoading(false);
+    }
   };
 
   // Min date = tomorrow
@@ -546,44 +550,42 @@ function BedReservationSection({
   const handleReserve = async () => {
     if (!userId || !selectedBedId || !selectedBedInfo) return;
     setReserving(true);
+    try {
+      const { error: resErr } = await supabase.from("bed_reservations").insert({
+        bed_id: selectedBedId,
+        listing_id: listingId,
+        floor_id: selectedBedInfo.floor.floor_id,
+        sharing_type_id: selectedBedInfo.room.sharing_type_id,
+        tenant_id: userId,
+        status: "pending",
+        tenant_message: tenantMessage.trim() || null,
+      });
 
-    const { error: resErr } = await supabase.from("bed_reservations").insert({
-      bed_id: selectedBedId,
-      listing_id: listingId,
-      floor_id: selectedBedInfo.floor.floor_id,
-      sharing_type_id: selectedBedInfo.room.sharing_type_id,
-      tenant_id: userId,
-      status: "pending",
-      tenant_message: tenantMessage.trim() || null,
-    });
+      if (resErr) { toast.error("Failed to reserve bed. Try again."); return; }
 
-    if (resErr) {
-      toast.error("Failed to reserve bed. Try again.");
+      await supabase
+        .from("listing_beds")
+        .update({ status: "pending", reserved_by: userId, reserved_at: new Date().toISOString() })
+        .eq("id", selectedBedId);
+
+      toast.success("Bed reserved! The owner will confirm your booking shortly.");
+
+      setSections(prev => prev.map(section => ({
+        ...section,
+        rooms: section.rooms.map(room => ({
+          ...room,
+          beds: room.beds.map(bed =>
+            bed.id === selectedBedId
+              ? { ...bed, status: "pending" as const, reserved_by: userId }
+              : bed
+          ),
+        })),
+      })));
+      setSelectedBedId(null);
+      setTenantMessage("");
+    } finally {
       setReserving(false);
-      return;
     }
-
-    await supabase
-      .from("listing_beds")
-      .update({ status: "pending", reserved_by: userId, reserved_at: new Date().toISOString() })
-      .eq("id", selectedBedId);
-
-    toast.success("Bed reserved! The owner will confirm your booking shortly.");
-
-    setSections(prev => prev.map(section => ({
-      ...section,
-      rooms: section.rooms.map(room => ({
-        ...room,
-        beds: room.beds.map(bed =>
-          bed.id === selectedBedId
-            ? { ...bed, status: "pending" as const, reserved_by: userId }
-            : bed
-        ),
-      })),
-    })));
-    setSelectedBedId(null);
-    setTenantMessage("");
-    setReserving(false);
   };
 
   if (sections.length === 0) return null;

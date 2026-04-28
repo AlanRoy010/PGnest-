@@ -31,15 +31,15 @@ export function useUser() {
           return;
         }
 
-        const { data } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-
-        if (mounted) {
-          setProfile(data);
-          setLoading(false);
+        try {
+          const { data } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+          if (mounted) setProfile(data);
+        } finally {
+          if (mounted) setLoading(false);
         }
       }
     );

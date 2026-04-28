@@ -43,7 +43,7 @@ interface TenantDeposit {
 
 export default function TenantDepositPage() {
   const supabase = useMemo(() => createClient(), []);
-  const { profile } = useUser();
+  const { profile, loading: userLoading } = useUser();
 
   const [deposit, setDeposit] = useState<TenantDeposit | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,34 +52,37 @@ export default function TenantDepositPage() {
   const [saving, setSaving] = useState(false);
 
   const fetchDeposit = useCallback(async () => {
-    const { data } = await supabase
-      .from("deposits")
-      .select(
+    try {
+      const { data } = await supabase
+        .from("deposits")
+        .select(
+          `
+          *,
+          booking:bookings!inner(
+            *,
+            listing:listings(title, area, address),
+            owner:profiles!bookings_owner_id_fkey(full_name, phone)
+          ),
+          deductions:deposit_deductions(
+            *,
+            raised_by:profiles!deposit_deductions_raised_by_owner_id_fkey(full_name)
+          )
         `
-        *,
-        booking:bookings!inner(
-          *,
-          listing:listings(title, area, address),
-          owner:profiles!bookings_owner_id_fkey(full_name, phone)
-        ),
-        deductions:deposit_deductions(
-          *,
-          raised_by:profiles!deposit_deductions_raised_by_owner_id_fkey(full_name)
         )
-      `
-      )
-      .eq("booking.tenant_id", profile!.id)
-      .eq("booking.status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    setDeposit(data as TenantDeposit | null);
-    setLoading(false);
+        .eq("booking.tenant_id", profile!.id)
+        .eq("booking.status", "active")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setDeposit(data as TenantDeposit | null);
+    } finally {
+      setLoading(false);
+    }
   }, [supabase, profile]);
 
   useEffect(() => {
-    if (!profile) return;
+    if (userLoading) return;
+    if (!profile) { setLoading(false); return; }
     fetchDeposit();
 
     const channel = supabase
@@ -92,7 +95,7 @@ export default function TenantDepositPage() {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [profile, fetchDeposit, supabase]);
+  }, [userLoading, profile, fetchDeposit, supabase]);
 
   const approveDeduction = async (deduction: DepositDeduction) => {
     setSaving(true);
