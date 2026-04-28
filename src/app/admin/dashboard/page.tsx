@@ -36,20 +36,20 @@ export default function AdminDashboardPage() {
   }, [supabase]);
 
   const cards = [
-    { label: "Total Users",      value: stats.totalUsers,    icon: Users,      color: "bg-blue-50 text-blue-600" },
-    { label: "Total Listings",   value: stats.totalListings, icon: Home,       color: "bg-[#fff7ed] text-[#ea6c0a]" },
-    { label: "Total Bookings",   value: stats.totalBookings, icon: BookOpen,   color: "bg-purple-50 text-purple-600" },
-    { label: "Active Bookings",  value: stats.activeBookings,icon: TrendingUp, color: "bg-green-50 text-green-600" },
+    { label: "Total Users",     value: stats.totalUsers,     icon: Users,      color: "#6B7FA3", bg: "#EDF0F6" },
+    { label: "Total Listings",  value: stats.totalListings,  icon: Home,       color: "#E8734A", bg: "#FDF0EB" },
+    { label: "Total Bookings",  value: stats.totalBookings,  icon: BookOpen,   color: "#7C6E9E", bg: "#F0EDF8" },
+    { label: "Active Bookings", value: stats.activeBookings, icon: TrendingUp, color: "#5A8C6A", bg: "#EDF5F0" },
   ];
 
   return (
     <div className="max-w-4xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-display text-2xl font-semibold text-[#1c1917]">
+        <h1 className="font-display text-2xl font-bold text-[#2C3040]">
           Dashboard
         </h1>
-        <p className="text-sm text-[#78716c] mt-0.5">
-          Welcome back, here&apos;s what&apos;s happening on PG Owns
+        <p className="text-sm text-[#7A7A8A] mt-0.5">
+          Welcome back — here&apos;s what&apos;s happening on PG Owns
         </p>
       </div>
 
@@ -57,15 +57,18 @@ export default function AdminDashboardPage() {
         {cards.map((card) => (
           <div
             key={card.label}
-            className="bg-white border border-[#e7e5e4] rounded-2xl p-5"
+            className="pg-card feather-card p-5"
           >
-            <div className={`w-10 h-10 ${card.color} rounded-xl flex items-center justify-center mb-3`}>
-              <card.icon className="w-5 h-5" />
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center mb-3"
+              style={{ background: card.bg }}
+            >
+              <card.icon className="w-5 h-5" style={{ color: card.color }} />
             </div>
-            <div className="font-display text-2xl font-semibold text-[#1c1917]">
+            <div className="font-display text-2xl font-bold text-[#2C3040]">
               {card.value}
             </div>
-            <div className="text-xs text-[#78716c] mt-0.5">{card.label}</div>
+            <div className="text-xs text-[#7A7A8A] mt-0.5">{card.label}</div>
           </div>
         ))}
       </div>

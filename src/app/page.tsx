@@ -73,6 +73,16 @@ const CATEGORIES = [
   { icon: Globe,       label: "Owner Portal" },
 ];
 
+// Decorative floating feather positions for hero
+const HERO_FEATHERS = [
+  { top: "12%", left: "8%",  size: 18, color: "#F5C4B0", delay: "0s",    dur: "7s" },
+  { top: "25%", right: "6%", size: 14, color: "#B8C4D8", delay: "1.2s",  dur: "6s" },
+  { top: "55%", left: "15%", size: 22, color: "#7C6E9E", delay: "0.5s",  dur: "8s" },
+  { top: "40%", right: "12%",size: 12, color: "#E8734A", delay: "2s",    dur: "5.5s" },
+  { top: "70%", left: "6%",  size: 16, color: "#6B7FA3", delay: "0.8s",  dur: "7.5s" },
+  { top: "18%", left: "50%", size: 10, color: "#F5C4B0", delay: "1.6s",  dur: "6.5s" },
+];
+
 // ── Component ────────────────────────────────────────────────
 
 export default function HomePage() {
@@ -128,10 +138,7 @@ export default function HomePage() {
             >
               Sign in
             </Link>
-            <Link
-              href="/signup"
-              className="text-sm font-bold bg-[#E8734A] text-white px-5 py-2.5 rounded-full hover:bg-[#C5522E] transition-colors shadow-lg"
-            >
+            <Link href="/signup" className="feather-btn text-sm">
               Get started
             </Link>
           </div>
@@ -148,6 +155,41 @@ export default function HomePage() {
         />
         {/* Wing blue-grey gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#2C3040]/82 to-[#4A5A7A]/65" />
+
+        {/* Large pigeon watermark */}
+        <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          style={{ opacity: 0.04 }}
+        >
+          <svg width="500" height="500" viewBox="0 0 64 64" fill="white">
+            <ellipse cx="32" cy="38" rx="18" ry="14" />
+            <ellipse cx="28" cy="40" rx="12" ry="8" opacity="0.6" />
+            <circle cx="40" cy="22" r="11" />
+            <ellipse cx="36" cy="30" rx="5" ry="4" opacity="0.5" />
+            <path d="M50 22 L56 21 L50 24 Z" />
+            <path d="M14 42 L8 50 L16 46 L12 54 L20 48 Z" opacity="0.8" />
+          </svg>
+        </div>
+
+        {/* Floating feather decorations */}
+        {HERO_FEATHERS.map((f, i) => (
+          <div
+            key={i}
+            className="feather-drift absolute pointer-events-none"
+            style={{
+              top: f.top,
+              left: "left" in f ? f.left : undefined,
+              right: "right" in f ? f.right : undefined,
+              animationDelay: f.delay,
+              animationDuration: f.dur,
+            }}
+          >
+            <svg width={f.size} height={f.size * 3} viewBox="0 0 20 60" fill={f.color}>
+              <path d="M10,1 C10,1 17,12 16,28 C15,44 10,57 10,57 C10,57 5,44 4,28 C3,12 10,1 10,1 Z" opacity="0.8" />
+              <path d="M10,8 C12,14 13,22 12,32 C11,40 10,50 10,50" fill="none" stroke={f.color} strokeWidth="0.8" opacity="0.5" />
+            </svg>
+          </div>
+        ))}
 
         {/* Hero text — bottom left */}
         <div className="absolute bottom-24 left-6 md:left-16 max-w-lg">
@@ -324,7 +366,7 @@ export default function HomePage() {
             {CATEGORIES.map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="flex items-center gap-3 bg-[#FDFBF8] rounded-2xl p-4 border border-[#E2DDD6] hover:shadow-md transition-shadow cursor-pointer group"
+                className="pg-card flex items-center gap-3 bg-[#FDFBF8] rounded-2xl p-4 border border-[#E2DDD6] hover:shadow-md transition-all cursor-pointer group"
               >
                 <div className="w-11 h-11 bg-[#6B7FA3] rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[#4A5A7A] transition-colors">
                   <Icon className="w-5 h-5 text-white" />
@@ -371,11 +413,8 @@ export default function HomePage() {
             ].map((f) => (
               <div
                 key={f.title}
-                className="relative bg-[#FDFBF8] border border-[#E2DDD6] rounded-3xl p-7 group hover:shadow-lg transition-all overflow-hidden"
+                className="feather-card pg-card p-7 group hover:shadow-lg transition-all"
               >
-                {/* Tricolor top bar */}
-                <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#E8734A] via-[#6B7FA3] to-[#7C6E9E]" />
-
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: f.color + "18" }}>
                   <f.icon className="w-5 h-5" style={{ color: f.color }} />
                 </div>
@@ -398,6 +437,17 @@ export default function HomePage() {
         <div className="absolute inset-0 opacity-5">
           <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl" />
         </div>
+        {/* Feather drift decorations */}
+        <div className="feather-drift absolute top-8 right-20 pointer-events-none" style={{ animationDelay: "0.5s" }}>
+          <svg width="20" height="60" viewBox="0 0 20 60" fill="#F5C4B0" opacity="0.2">
+            <path d="M10,1 C10,1 17,12 16,28 C15,44 10,57 10,57 C10,57 5,44 4,28 C3,12 10,1 10,1 Z" />
+          </svg>
+        </div>
+        <div className="feather-drift absolute bottom-4 left-10 pointer-events-none" style={{ animationDelay: "1.5s", animationDuration: "8s" }}>
+          <svg width="14" height="42" viewBox="0 0 20 60" fill="#B8C4D8" opacity="0.2">
+            <path d="M10,1 C10,1 17,12 16,28 C15,44 10,57 10,57 C10,57 5,44 4,28 C3,12 10,1 10,1 Z" />
+          </svg>
+        </div>
         <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-10 py-20 flex flex-col md:flex-row items-center justify-between gap-8">
           <div>
             <p className="text-[#F9D5C4] text-xs font-bold uppercase tracking-[0.2em] mb-3">For PG Owners</p>
@@ -408,10 +458,7 @@ export default function HomePage() {
               Reach thousands of verified tenants. Manage bookings, collect payments, and handle deposits — all from one dashboard.
             </p>
           </div>
-          <Link
-            href="/signup?role=owner"
-            className="flex items-center gap-2 bg-[#E8734A] text-white px-8 py-4 rounded-full font-black text-sm hover:bg-[#C5522E] transition-colors flex-shrink-0 shadow-xl"
-          >
+          <Link href="/signup?role=owner" className="feather-btn flex-shrink-0 text-sm font-black">
             List your PG <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -443,7 +490,7 @@ function ListingCard({
 }) {
   return (
     <div
-      className={`bg-[#FDFBF8] rounded-3xl overflow-hidden relative ${
+      className={`pg-card bg-[#FDFBF8] rounded-3xl overflow-hidden relative ${
         featured ? "shadow-2xl ring-2 ring-[#E8734A]/10" : "shadow-md"
       }`}
     >

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Home, BookOpen, Shield, LogOut, Menu } from "lucide-react";
 import { useState } from "react";
@@ -9,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
 import { getInitials } from "@/lib/utils";
 import { toast } from "sonner";
+import PigeonLogo from "@/components/shared/PigeonLogo";
 
 const NAV_ITEMS = [
   { href: "/owner/listings", label: "My Listings", icon: Home },
@@ -54,10 +54,10 @@ export default function OwnerLayout({
       <div className="flex flex-col h-full bg-[#FDFBF8] border-r border-[#E2DDD6]">
         {/* Logo */}
         <div className="px-6 py-5 border-b border-[#E2DDD6]">
-          <Link href="/" className="flex items-center gap-2 font-display text-xl font-semibold text-[#2C3040]">
-            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} /><span className="font-display font-black">Owns</span>
+          <Link href="/">
+            <PigeonLogo size="md" />
           </Link>
-          <div className="mt-0.5 text-xs text-[#A09488]">Owner Dashboard</div>
+          <div className="mt-1 text-xs text-[#A09488]">Owner Dashboard</div>
         </div>
 
         {/* Navigation */}
@@ -71,11 +71,17 @@ export default function OwnerLayout({
                 onClick={() => setMobileOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   active
-                    ? "bg-[#FDF0EB] text-[#C5522E]"
+                    ? "nav-item-active text-[#C5522E]"
                     : "text-[#5C5450] hover:bg-[#EDE8E0] hover:text-[#2C3040]"
                 }`}
               >
-                <item.icon className="w-4 h-4 flex-shrink-0" />
+                {active && (
+                  <span
+                    className="absolute left-3 w-1.5 h-1.5 rounded-full bg-[#E8734A]"
+                    style={{ animation: "pigeon-bob 1.5s ease-in-out infinite" }}
+                  />
+                )}
+                <item.icon className={`w-4 h-4 flex-shrink-0 ${active ? "text-[#E8734A]" : ""}`} />
                 {item.label}
               </Link>
             );
@@ -133,11 +139,8 @@ export default function OwnerLayout({
       <div className="flex-1 md:ml-56 flex flex-col min-h-screen">
         {/* Mobile topbar */}
         <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#FDFBF8] border-b border-[#E2DDD6]">
-          <Link
-            href="/"
-            className="flex items-center gap-2 font-display text-lg font-semibold text-[#2C3040]"
-          >
-            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} /><span className="font-display font-black">Owns</span>
+          <Link href="/">
+            <PigeonLogo size="sm" />
           </Link>
           <button
             onClick={() => setMobileOpen(true)}
@@ -153,26 +156,26 @@ export default function OwnerLayout({
       {/* Sign out confirmation modal */}
       {showSignOutModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 animate-fade-up">
+          <div className="feather-card w-full max-w-sm p-6 animate-fade-up shadow-xl">
             <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center mb-4">
               <LogOut className="w-5 h-5 text-red-500" />
             </div>
-            <h2 className="font-display text-lg font-semibold text-[#1c1917] mb-1">
+            <h2 className="font-display text-lg font-semibold text-[#2C3040] mb-1">
               Sign out?
             </h2>
-            <p className="text-sm text-[#78716c] mb-6">
+            <p className="text-sm text-[#7A7A8A] mb-6">
               You&apos;ll need to sign in again to access your dashboard.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowSignOutModal(false)}
-                className="flex-1 py-2.5 text-sm font-medium text-[#57534e] border border-[#e7e5e4] rounded-xl hover:bg-[#f5f5f4] transition-colors"
+                className="feather-btn feather-btn-ghost flex-1"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmSignOut}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 Sign out
