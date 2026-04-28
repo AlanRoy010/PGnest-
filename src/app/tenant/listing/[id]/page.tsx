@@ -599,19 +599,18 @@ function BedReservationSection({
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-4 mb-5 flex-wrap text-xs text-[#57534e]">
-          <span className="flex items-center gap-1.5">
-            <span className="w-5 h-5 rounded-md bg-[#e5e7eb] inline-block border border-[#d1d5db]" /> Available
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-5 h-5 rounded-md bg-[#ea6c0a] inline-block" /> Pending
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-5 h-5 rounded-md bg-[#6b7280] inline-block" /> Occupied
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-5 h-5 rounded-md bg-[#3b82f6] inline-block ring-2 ring-[#3b82f6] ring-offset-1" /> Selected
-          </span>
+        <div className="flex items-center gap-5 mb-5 flex-wrap text-xs text-[#57534e]">
+          {[
+            { label: "Available", stroke: "#9ca3af", fill: "#f9fafb", pillow: "white" },
+            { label: "Pending",   stroke: "#ea6c0a", fill: "#fff7ed", pillow: "#fed7aa" },
+            { label: "Occupied",  stroke: "#6b7280", fill: "#e5e7eb", pillow: "#9ca3af" },
+            { label: "Selected",  stroke: "#3b82f6", fill: "#dbeafe", pillow: "white"  },
+          ].map(({ label, stroke, fill, pillow }) => (
+            <span key={label} className="flex items-center gap-1.5">
+              <BedIcon stroke={stroke} fill={fill} pillowFill={pillow} size={20} />
+              {label}
+            </span>
+          ))}
         </div>
 
         {/* Cinema grid — all floors at once */}
@@ -638,27 +637,28 @@ function BedReservationSection({
                       </div>
                     </div>
                     {/* Divider */}
-                    <div className="w-px h-8 bg-[#e7e5e4] flex-shrink-0" />
-                    {/* Bed squares */}
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="w-px h-12 bg-[#e7e5e4] flex-shrink-0" />
+                    {/* Bed icons */}
+                    <div className="flex flex-wrap gap-2">
                       {room.beds.map(bed => {
                         const isSelected = selectedBedId === bed.id;
                         const isAvailable = bed.status === "available";
                         const isMyPending = bed.reserved_by === userId && bed.status === "pending";
 
-                        let bg = "#e5e7eb";
-                        let fg = "#374151";
-                        let border = "border-[#d1d5db]";
+                        let stroke = "#9ca3af";
+                        let fill = "#f9fafb";
+                        let pillow = "white";
                         let title = "Click to select";
 
                         if (isSelected) {
-                          bg = "#3b82f6"; fg = "white"; border = "border-[#3b82f6]";
+                          stroke = "#3b82f6"; fill = "#dbeafe"; pillow = "white";
                         } else if (bed.status === "pending") {
-                          bg = isMyPending ? "#60a5fa" : "#ea6c0a";
-                          fg = "white"; border = "border-transparent";
+                          stroke = isMyPending ? "#3b82f6" : "#ea6c0a";
+                          fill = isMyPending ? "#eff6ff" : "#fff7ed";
+                          pillow = isMyPending ? "#bfdbfe" : "#fed7aa";
                           title = isMyPending ? "Your reservation" : "Pending";
                         } else if (bed.status === "occupied") {
-                          bg = "#6b7280"; fg = "white"; border = "border-transparent";
+                          stroke = "#6b7280"; fill = "#e5e7eb"; pillow = "#9ca3af";
                           title = "Occupied";
                         }
 
@@ -671,14 +671,16 @@ function BedReservationSection({
                               if (!isAvailable) return;
                               setSelectedBedId(prev => prev === bed.id ? null : bed.id);
                             }}
-                            style={{ backgroundColor: bg, color: fg }}
-                            className={`w-9 h-9 rounded-lg border text-xs font-bold transition-all flex items-center justify-center ${border} ${
-                              isAvailable
-                                ? "hover:scale-110 active:scale-95 cursor-pointer"
-                                : "cursor-not-allowed"
-                            } ${isSelected ? "ring-2 ring-[#3b82f6] ring-offset-1 scale-110" : ""}`}
+                            className={`flex flex-col items-center gap-0.5 transition-all focus:outline-none ${
+                              isAvailable ? "hover:scale-110 active:scale-95 cursor-pointer" : "cursor-not-allowed"
+                            } ${isSelected ? "scale-110 drop-shadow-md" : ""}`}
                           >
-                            {isSelected ? "✓" : bed.bed_number}
+                            <BedIcon
+                              stroke={stroke}
+                              fill={fill}
+                              pillowFill={pillow}
+                              label={isSelected ? "✓" : String(bed.bed_number)}
+                            />
                           </button>
                         );
                       })}
@@ -757,6 +759,53 @@ function BedReservationSection({
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Bed Icon SVG ────────────────────────────────────────────────────────────
+
+function BedIcon({
+  stroke,
+  fill,
+  pillowFill,
+  label,
+  size = 38,
+}: {
+  stroke: string;
+  fill: string;
+  pillowFill: string;
+  label?: string;
+  size?: number;
+}) {
+  // viewBox 0 0 40 52 — front-facing single bed
+  const h = Math.round(size * 1.35);
+  return (
+    <svg viewBox="0 0 40 52" width={size} height={h} fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Headboard */}
+      <rect x="2" y="2" width="36" height="14" rx="5" fill={fill} stroke={stroke} strokeWidth="2.5" />
+      {/* Pillow */}
+      <rect x="7" y="5" width="26" height="8" rx="2.5" fill={pillowFill} stroke={stroke} strokeWidth="1.5" />
+      {/* Mattress body */}
+      <rect x="2" y="18" width="36" height="20" rx="2" fill={fill} stroke={stroke} strokeWidth="2.5" />
+      {/* Left leg */}
+      <rect x="5" y="40" width="8" height="9" rx="2" fill={fill} stroke={stroke} strokeWidth="2" />
+      {/* Right leg */}
+      <rect x="27" y="40" width="8" height="9" rx="2" fill={fill} stroke={stroke} strokeWidth="2" />
+      {/* Label inside mattress */}
+      {label && (
+        <text
+          x="20" y="30"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill={stroke}
+          fontSize="11"
+          fontWeight="700"
+          fontFamily="system-ui, -apple-system, sans-serif"
+        >
+          {label}
+        </text>
+      )}
+    </svg>
   );
 }
 
