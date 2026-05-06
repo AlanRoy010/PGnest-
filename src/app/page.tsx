@@ -1,548 +1,447 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Search, Shield, IndianRupee, Star, ArrowRight, MapPin,
-  ChevronLeft, ChevronRight, Users, Home,
-  Phone, Globe, Info, Wrench, FileText,
-} from "lucide-react";
-import { Magnetic, AmbientFeathers } from "@/components/FeatherFX";
+import { Magnetic, TiltCard, AmbientFeathers } from "@/components/FeatherFX";
 
-// ── Data ────────────────────────────────────────────────────
+// ── Tokens ────────────────────────────────────────────────────
+const C = {
+  bg0: "#0a0c18",
+  bg1: "#0f1224",
+  bg2: "#171a2e",
+  glass: "rgba(255,255,255,0.05)",
+  border: "rgba(255,255,255,0.09)",
+  borderH: "rgba(255,255,255,0.18)",
+  text: "#f1f3f9",
+  textDim: "rgba(241,243,249,0.62)",
+  textMute: "rgba(241,243,249,0.38)",
+  pearl: "#e8ecf4",
+  iri1: "#a78bfa",
+  iri2: "#60a5fa",
+  iri3: "#34d399",
+  iri4: "#f472b6",
+};
+const fmt = (n: number) => "₹" + n.toLocaleString("en-IN");
 
-const AREAS = ["All", "Andheri West", "Bandra", "Powai", "Thane West", "Malad", "Goregaon", "Dadar", "Kurla"];
-
+// ── Data ──────────────────────────────────────────────────────
 const LISTINGS = [
-  {
-    id: 1,
-    name: "Andheri Premium PG",
-    area: "Andheri West",
-    rent: 12000,
-    type: "Double",
-    verified: true,
-    gradient: "from-[#6B7FA3] to-[#4A5A7A]",
-  },
-  {
-    id: 2,
-    name: "Bandra Elite Stay",
-    area: "Bandra",
-    rent: 18000,
-    type: "Single",
-    verified: true,
-    gradient: "from-[#4A5A7A] to-[#364466]",
-  },
-  {
-    id: 3,
-    name: "Powai Lake View PG",
-    area: "Powai",
-    rent: 15000,
-    type: "Triple",
-    verified: true,
-    gradient: "from-[#7C6E9E] to-[#6B7FA3]",
-  },
-  {
-    id: 4,
-    name: "Thane Comfort House",
-    area: "Thane West",
-    rent: 9000,
-    type: "Double",
-    verified: false,
-    gradient: "from-[#403C38] to-[#5C5450]",
-  },
-  {
-    id: 5,
-    name: "Malad Student Hub",
-    area: "Malad",
-    rent: 8000,
-    type: "Dormitory",
-    verified: true,
-    gradient: "from-[#E8734A] to-[#C5522E]",
-  },
+  { id: 1, title: "Andheri Premium Roost",  area: "Andheri West", rent: 12000, type: "Double",  verified: true,  rooms: 2, total: 3, hue: "250,80%" },
+  { id: 2, title: "Bandra Pearl Loft",       area: "Bandra",       rent: 18000, type: "Single",  verified: true,  rooms: 1, total: 2, hue: "320,70%" },
+  { id: 3, title: "Powai Lake Sanctuary",    area: "Powai",        rent: 15000, type: "Triple",  verified: true,  rooms: 3, total: 4, hue: "170,60%" },
+  { id: 4, title: "Malad Student Nest",      area: "Malad",        rent: 8000,  type: "Dorm",    verified: false, rooms: 5, total: 8, hue: "30,60%"  },
+  { id: 5, title: "Goregaon Glass House",    area: "Goregaon",     rent: 11000, type: "Double",  verified: true,  rooms: 1, total: 3, hue: "290,65%" },
+  { id: 6, title: "Dadar Heritage Eyrie",    area: "Dadar",        rent: 13500, type: "Single",  verified: true,  rooms: 0, total: 2, hue: "200,70%" },
 ];
 
-const CATEGORIES = [
-  { icon: Home,        label: "Search PG" },
-  { icon: Info,        label: "Verified Listings" },
-  { icon: MapPin,      label: "Mumbai Locations" },
-  { icon: Users,       label: "Tenant Support" },
-  { icon: Wrench,      label: "Maintenance" },
-  { icon: Phone,       label: "Customer Service" },
-  { icon: IndianRupee, label: "Secure Deposit" },
-  { icon: FileText,    label: "Booking Docs" },
-  { icon: Globe,       label: "Owner Portal" },
-];
+// ── Iridescent text ───────────────────────────────────────────
+function IriText({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{
+      background: `linear-gradient(120deg, ${C.iri1} 0%, ${C.iri2} 35%, ${C.iri3} 70%, ${C.iri4} 100%)`,
+      WebkitBackgroundClip: "text",
+      backgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+    }}>
+      {children}
+    </span>
+  );
+}
 
-// Decorative floating feather positions for hero
-const HERO_FEATHERS = [
-  { top: "12%", left: "8%",  size: 18, color: "#F5C4B0", delay: "0s",    dur: "7s" },
-  { top: "25%", right: "6%", size: 14, color: "#B8C4D8", delay: "1.2s",  dur: "6s" },
-  { top: "55%", left: "15%", size: 22, color: "#7C6E9E", delay: "0.5s",  dur: "8s" },
-  { top: "40%", right: "12%",size: 12, color: "#E8734A", delay: "2s",    dur: "5.5s" },
-  { top: "70%", left: "6%",  size: 16, color: "#6B7FA3", delay: "0.8s",  dur: "7.5s" },
-  { top: "18%", left: "50%", size: 10, color: "#F5C4B0", delay: "1.6s",  dur: "6.5s" },
-];
+// ── Glass surface ─────────────────────────────────────────────
+function Glass({ children, style = {}, ...rest }: React.HTMLAttributes<HTMLDivElement> & { style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02))",
+      backdropFilter: "blur(24px) saturate(140%)",
+      WebkitBackdropFilter: "blur(24px) saturate(140%)",
+      border: `1px solid ${C.border}`,
+      borderRadius: 20,
+      boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)",
+      ...style,
+    }} {...rest}>
+      {children}
+    </div>
+  );
+}
 
-// ── Component ────────────────────────────────────────────────
+// ── Feather SVG ───────────────────────────────────────────────
+function FeatherDecor({ size = 60, color = "#fff", opacity = 0.12, rotate = 0 }: {
+  size?: number; color?: string; opacity?: number; rotate?: number;
+}) {
+  return (
+    <svg width={size} height={size * 3.3} viewBox="0 0 24 80"
+      style={{ display: "block", opacity, transform: `rotate(${rotate}deg)` }}>
+      <defs>
+        <linearGradient id={`fd-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="1"/>
+          <stop offset="100%" stopColor={color} stopOpacity="0.25"/>
+        </linearGradient>
+      </defs>
+      <path d="M12 2 C12 2,22 18,20 38 C18 58,13 75,12 78 C11 75,6 58,4 38 C2 18,12 2,12 2 Z"
+        fill={`url(#fd-${color.replace("#", "")})`}/>
+      <path d="M12 8 L12 76" stroke={color} strokeWidth="0.6" opacity="0.5" fill="none"/>
+      {[15,22,30,40,50,60,68].map(y => (
+        <g key={y} stroke={color} strokeWidth="0.35" opacity="0.4" fill="none">
+          <path d={`M12 ${y} Q${12-y/8} ${y+2},${12-y/4} ${y+4}`}/>
+          <path d={`M12 ${y} Q${12+y/8} ${y+2},${12+y/4} ${y+4}`}/>
+        </g>
+      ))}
+    </svg>
+  );
+}
 
+// ── Scroll-aware glass nav ────────────────────────────────────
+function Nav({ scrolled }: { scrolled: boolean }) {
+  return (
+    <nav style={{
+      position: "fixed", top: 0, left: 0, right: 0, zIndex: 100,
+      padding: scrolled ? "14px 48px" : "24px 48px",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      transition: "all 0.4s cubic-bezier(.2,.9,.3,1)",
+      background: scrolled ? "rgba(10,12,24,0.75)" : "transparent",
+      backdropFilter: scrolled ? "blur(24px) saturate(140%)" : "none",
+      WebkitBackdropFilter: scrolled ? "blur(24px) saturate(140%)" : "none",
+      borderBottom: scrolled ? `1px solid ${C.border}` : "1px solid transparent",
+    }}>
+      <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+        <Image src="/logo.svg" alt="PG Owns" width={36} height={36} className="brightness-0 invert" />
+        <div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 17, color: C.pearl, letterSpacing: "-0.02em", lineHeight: 1 }}>
+            PG <em style={{ fontStyle: "italic", fontWeight: 400 }}>Owns</em>
+          </div>
+          <div style={{ fontSize: 8, color: C.textMute, letterSpacing: "0.18em", textTransform: "uppercase", marginTop: 2 }}>Find your nest</div>
+        </div>
+      </Link>
+
+      <div style={{ display: "flex", gap: 36, alignItems: "center" }}>
+        {[["Find", "/tenant/search"], ["Owners", "/owner/listings"], ["Tenants", "/tenant/search"]].map(([label, href]) => (
+          <Link key={label} href={href} style={{
+            fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 500,
+            color: C.textDim, textDecoration: "none", letterSpacing: "0.02em",
+            transition: "color .2s",
+          }}
+            onMouseEnter={e => (e.currentTarget.style.color = C.pearl)}
+            onMouseLeave={e => (e.currentTarget.style.color = C.textDim)}
+          >{label}</Link>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <Link href="/login" style={{ fontFamily: "var(--font-body)", fontSize: 13, color: C.textDim, padding: "8px 14px", textDecoration: "none" }}>
+          Sign in
+        </Link>
+        <Magnetic strength={0.25}>
+          <Link href="/signup" style={{
+            background: `linear-gradient(120deg, ${C.iri1}, ${C.iri2})`,
+            color: C.bg0, fontSize: 13, fontWeight: 700, padding: "10px 22px",
+            borderRadius: 99, textDecoration: "none", display: "inline-block",
+            boxShadow: `0 8px 24px ${C.iri1}55`, letterSpacing: "0.01em",
+          }}>
+            Get started
+          </Link>
+        </Magnetic>
+      </div>
+    </nav>
+  );
+}
+
+// ── Listing card ──────────────────────────────────────────────
+function ListingCard({ listing, delay = 0 }: { listing: typeof LISTINGS[0]; delay?: number }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <TiltCard max={5} style={{ animationDelay: `${delay}s` }}>
+      <Link href="/tenant/search" style={{ textDecoration: "none", display: "block" }}
+        onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+        <Glass style={{
+          overflow: "hidden", padding: 0,
+          transition: "all .5s cubic-bezier(.2,.9,.3,1)",
+          boxShadow: hover
+            ? `0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px ${C.iri2}66, 0 0 50px ${C.iri2}18`
+            : "0 8px 32px rgba(0,0,0,0.4)",
+        }}>
+          {/* Photo area */}
+          <div style={{
+            height: 200, position: "relative", overflow: "hidden",
+            background: `linear-gradient(135deg, hsla(${listing.hue},40%,0.6), hsla(${listing.hue},25%,0.3)), ${C.bg2}`,
+          }}>
+            {/* Shimmer on hover */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: `linear-gradient(115deg, transparent 30%, ${C.iri1}1a 50%, transparent 70%)`,
+              transform: hover ? "translateX(20%)" : "translateX(-110%)",
+              transition: "transform 1.2s cubic-bezier(.2,.9,.3,1)",
+            }}/>
+            {/* Feather watermark */}
+            <div style={{ position: "absolute", top: 16, right: 20,
+              transform: hover ? "rotate(-12deg) translateY(-4px)" : "rotate(-22deg)",
+              transition: "transform .5s", opacity: 0.45 }}>
+              <FeatherDecor size={36} color="#fff" opacity={1}/>
+            </div>
+            {listing.verified && (
+              <div style={{
+                position: "absolute", top: 14, left: 14,
+                padding: "5px 11px", borderRadius: 99,
+                background: "rgba(0,0,0,0.5)", backdropFilter: "blur(12px)",
+                border: `1px solid ${C.iri2}66`, color: C.iri2,
+                fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
+                display: "flex", alignItems: "center", gap: 5,
+              }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: C.iri3, boxShadow: `0 0 8px ${C.iri3}` }}/>
+                Verified
+              </div>
+            )}
+            <div style={{ position: "absolute", bottom: 14, left: 14, right: 14, display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.7)", letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 600 }}>{listing.type}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 9px", borderRadius: 99, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(12px)", fontSize: 11, color: C.pearl, fontWeight: 600 }}>
+                <span style={{ color: C.iri3 }}>★</span> 4.7
+              </div>
+            </div>
+          </div>
+
+          {/* Body */}
+          <div style={{ padding: "20px 22px 22px" }}>
+            <div style={{ fontSize: 10, color: C.textMute, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 6, fontWeight: 600 }}>{listing.area}</div>
+            <h3 style={{ fontFamily: "var(--font-display)", fontSize: 19, fontWeight: 700, color: C.pearl, letterSpacing: "-0.01em", marginBottom: 14, lineHeight: 1.2 }}>{listing.title}</h3>
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", paddingTop: 14, borderTop: `1px solid ${C.border}` }}>
+              <div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 800, color: C.pearl, letterSpacing: "-0.02em" }}>
+                  {fmt(listing.rent)}<span style={{ fontSize: 11, fontWeight: 400, color: C.textMute, fontFamily: "var(--font-body)" }}>/mo</span>
+                </div>
+                <div style={{ fontSize: 10, color: C.textMute, marginTop: 2 }}>{listing.rooms} of {listing.total} rooms left</div>
+              </div>
+              <div style={{
+                width: 34, height: 34, borderRadius: "50%",
+                background: hover ? `linear-gradient(120deg,${C.iri1},${C.iri2})` : "rgba(255,255,255,0.06)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                transition: "all .35s", color: hover ? C.bg0 : C.pearl, fontSize: 14, fontWeight: 700,
+              }}>→</div>
+            </div>
+          </div>
+        </Glass>
+      </Link>
+    </TiltCard>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────
 export default function HomePage() {
-  const [activeArea, setActiveArea] = useState("All");
-  const [activeCard, setActiveCard] = useState(1);
-  const [searchArea, setSearchArea]   = useState("");
-  const [searchType, setSearchType]   = useState("");
-  const [searchPrice, setSearchPrice] = useState("");
+  const [scrollY, setScrollY] = useState(0);
+  const [searchArea, setSearchArea] = useState("Any area in Mumbai");
+  const [searchType, setSearchType] = useState("Single, Double, Triple…");
+  const [searchBudget, setSearchBudget] = useState("₹15,000");
+  const heroRef = useRef<HTMLElement>(null);
 
-  const prevIdx = (activeCard - 1 + LISTINGS.length) % LISTINGS.length;
-  const nextIdx = (activeCard + 1) % LISTINGS.length;
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const buildSearchUrl = () => {
     const params = new URLSearchParams();
-    if (searchArea)  params.set("area", searchArea);
-    if (searchType)  params.set("room_type", searchType);
-    if (searchPrice) params.set("max_rent", searchPrice);
+    if (searchArea && searchArea !== "Any area in Mumbai") params.set("area", searchArea);
+    if (searchBudget && searchBudget !== "₹15,000") params.set("max_rent", searchBudget.replace(/[^\d]/g, ""));
     const qs = params.toString();
     return `/tenant/search${qs ? `?${qs}` : ""}`;
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F4EF] font-body overflow-x-hidden">
-      <AmbientFeathers count={10} />
+    <div style={{ background: C.bg0, minHeight: "100vh", color: C.text, overflowX: "hidden" }}>
+      <AmbientFeathers count={12} />
+      <Nav scrolled={scrollY > 40} />
 
-      {/* ── NAV ───────────────────────────────────────────── */}
-      <nav className="absolute top-0 inset-x-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 md:px-10 py-5 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.svg" alt="PGOwns" width={44} height={44} className="brightness-0 invert" />
-            <span className="font-display text-xl font-black text-white tracking-tight">Owns</span>
-          </Link>
+      {/* ── HERO ─────────────────────────────────────────────── */}
+      <section ref={heroRef} style={{ minHeight: "100vh", position: "relative", display: "flex", flexDirection: "column", justifyContent: "center", padding: "140px 48px 100px" }}>
+        {/* Parallax glow blobs */}
+        <div style={{ position: "absolute", top: "8%", left: "8%", width: 560, height: 560, borderRadius: "50%", background: `radial-gradient(circle, ${C.iri1}20, transparent 70%)`, filter: "blur(60px)", transform: `translateY(${scrollY * 0.28}px)`, pointerEvents: "none" }}/>
+        <div style={{ position: "absolute", top: "25%", right: "4%", width: 480, height: 480, borderRadius: "50%", background: `radial-gradient(circle, ${C.iri3}1e, transparent 70%)`, filter: "blur(60px)", transform: `translateY(${scrollY * 0.45}px)`, pointerEvents: "none" }}/>
+        <div style={{ position: "absolute", bottom: "8%", left: "28%", width: 640, height: 380, borderRadius: "50%", background: `radial-gradient(circle, ${C.iri4}16, transparent 70%)`, filter: "blur(80px)", pointerEvents: "none" }}/>
 
-          <div className="hidden md:flex items-center gap-10">
-            {[
-              { label: "Home",   href: "/" },
-              { label: "Search", href: "/tenant/search" },
-              { label: "About",  href: "/" },
-            ].map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="text-sm font-medium text-white/75 hover:text-white transition-colors"
-              >
-                {item.label}
-              </Link>
-            ))}
+        {/* Big feather decoration — right side */}
+        <div style={{ position: "absolute", right: "4%", top: "18%", opacity: 0.22, pointerEvents: "none", transform: `translateY(${scrollY * 0.15}px)` }}>
+          <FeatherDecor size={90} color={C.iri2} opacity={1} rotate={-10}/>
+        </div>
+        <div style={{ position: "absolute", right: "10%", bottom: "20%", opacity: 0.12, pointerEvents: "none" }}>
+          <FeatherDecor size={55} color={C.iri1} opacity={1} rotate={20}/>
+        </div>
+
+        <div style={{ maxWidth: 1200, margin: "0 auto", width: "100%", position: "relative", zIndex: 5 }}>
+          {/* Eyebrow */}
+          <div style={{ fontSize: 10, color: C.iri2, letterSpacing: "0.32em", textTransform: "uppercase", fontWeight: 700, marginBottom: 28, display: "inline-flex", alignItems: "center", gap: 10 }}>
+            <span style={{ width: 30, height: 1, background: `linear-gradient(90deg,transparent,${C.iri2})` }}/>
+            Mumbai&apos;s most loved PG platform
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-sm font-medium text-white/70 hover:text-white transition-colors px-3 py-2"
-            >
-              Sign in
-            </Link>
-            <Magnetic strength={0.25}>
-              <Link href="/signup" className="feather-btn text-sm">
-                Get started
+          {/* Headline */}
+          <h1 style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "clamp(56px, 9vw, 120px)",
+            fontWeight: 900, lineHeight: 0.92, letterSpacing: "-0.04em",
+            color: C.pearl, marginBottom: 32, maxWidth: 1000,
+          }}>
+            Every pigeon<br/>
+            knows where<br/>
+            <em style={{ fontStyle: "italic", fontWeight: 400 }}>
+              <IriText>home</IriText>
+            </em> is.
+          </h1>
+
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 17, lineHeight: 1.65, color: C.textDim, maxWidth: 520, marginBottom: 52, fontWeight: 300 }}>
+            We help you find yours. Verified Mumbai PGs with transparent pricing, real photos, and a deposit you can actually see.
+          </p>
+
+          {/* Quill search bar */}
+          <Glass style={{ display: "flex", alignItems: "stretch", maxWidth: 880, padding: 6, borderRadius: 99 }}>
+            {[
+              ["Where", searchArea, setSearchArea, "Any area in Mumbai"],
+              ["Sharing type", searchType, setSearchType, "Single, Double, Triple…"],
+              ["Max budget", searchBudget, setSearchBudget, "₹15,000"],
+            ].map(([label, value, setValue, placeholder], i, arr) => (
+              <div key={label as string} style={{
+                flex: 1, padding: "14px 22px",
+                borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none",
+              }}>
+                <div style={{ fontSize: 8, color: C.textMute, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 4, fontWeight: 700 }}>{label as string}</div>
+                <input
+                  value={value as string}
+                  onChange={e => (setValue as React.Dispatch<React.SetStateAction<string>>)(e.target.value)}
+                  onFocus={e => { if (e.target.value === placeholder) (setValue as React.Dispatch<React.SetStateAction<string>>)(""); }}
+                  style={{ fontSize: 13, color: C.pearl, fontFamily: "var(--font-body)", fontWeight: 500, background: "transparent", border: "none", outline: "none", width: "100%" }}
+                />
+              </div>
+            ))}
+            <Magnetic strength={0.2}>
+              <Link href={buildSearchUrl()} style={{
+                background: `linear-gradient(120deg, ${C.iri1}, ${C.iri2}, ${C.iri3})`,
+                color: C.bg0, fontSize: 14, fontWeight: 700, padding: "0 32px",
+                borderRadius: 99, textDecoration: "none",
+                display: "flex", alignItems: "center", gap: 8, minHeight: 52,
+                boxShadow: `0 0 28px ${C.iri2}55`, letterSpacing: "0.02em",
+                whiteSpace: "nowrap",
+              }}>
+                <span style={{ fontSize: 16 }}>↗</span> Search
               </Link>
             </Magnetic>
+          </Glass>
+
+          {/* Stats */}
+          <div style={{ display: "flex", gap: 40, marginTop: 52, flexWrap: "wrap" }}>
+            {[["1,200+", "verified roosts"], ["8,400+", "happy tenants"], ["₹0", "hidden fees"]].map(([n, l]) => (
+              <div key={l}>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 40, fontWeight: 800, color: C.pearl, letterSpacing: "-0.02em" }}>{n}</div>
+                <div style={{ fontSize: 10, color: C.textMute, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 2 }}>{l}</div>
+              </div>
+            ))}
           </div>
         </div>
-      </nav>
 
-      {/* ── HERO ──────────────────────────────────────────── */}
-      <section className="relative h-[82vh] min-h-[580px]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1600&q=80"
-          alt="Modern apartment interior"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        {/* Wing blue-grey gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#2C3040]/82 to-[#4A5A7A]/65" />
-
-        {/* Large pigeon watermark */}
-        <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          style={{ opacity: 0.04 }}
-        >
-          <svg width="500" height="500" viewBox="0 0 64 64" fill="white">
-            <ellipse cx="32" cy="38" rx="18" ry="14" />
-            <ellipse cx="28" cy="40" rx="12" ry="8" opacity="0.6" />
-            <circle cx="40" cy="22" r="11" />
-            <ellipse cx="36" cy="30" rx="5" ry="4" opacity="0.5" />
-            <path d="M50 22 L56 21 L50 24 Z" />
-            <path d="M14 42 L8 50 L16 46 L12 54 L20 48 Z" opacity="0.8" />
-          </svg>
+        {/* Scroll cue */}
+        <div style={{ position: "absolute", bottom: 32, left: "50%", transform: "translateX(-50%)", color: C.textMute, fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", animation: "pulse 2s ease-in-out infinite", display: "flex", flexDirection: "column", alignItems: "center", gap: 7 }}>
+          <span>scroll to glide</span>
+          <span style={{ fontSize: 16 }}>↓</span>
         </div>
+        <style>{`@keyframes pulse{0%,100%{opacity:.4;transform:translateX(-50%) translateY(0)}50%{opacity:.9;transform:translateX(-50%) translateY(5px)}}`}</style>
+      </section>
 
-        {/* Floating feather decorations */}
-        {HERO_FEATHERS.map((f, i) => (
-          <div
-            key={i}
-            className="feather-drift absolute pointer-events-none"
-            style={{
-              top: f.top,
-              left: "left" in f ? f.left : undefined,
-              right: "right" in f ? f.right : undefined,
-              animationDelay: f.delay,
-              animationDuration: f.dur,
+      {/* ── FEATURED LISTINGS ──────────────────────────────────── */}
+      <section style={{ padding: "120px 48px", position: "relative" }}>
+        <div style={{ maxWidth: 1380, margin: "0 auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 52 }}>
+            <div>
+              <div style={{ fontSize: 10, color: C.iri2, letterSpacing: "0.26em", textTransform: "uppercase", marginBottom: 14, fontWeight: 700 }}>Featured roosts</div>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(38px,4.5vw,60px)", fontWeight: 800, color: C.pearl, letterSpacing: "-0.03em", lineHeight: 1.05 }}>
+                Six places to <em style={{ fontStyle: "italic" }}><IriText>land softly</IriText></em>.
+              </h2>
+            </div>
+            <Link href="/tenant/search" style={{
+              background: "none", border: `1px solid ${C.borderH}`,
+              color: C.pearl, fontSize: 13, padding: "11px 24px", borderRadius: 99,
+              fontFamily: "var(--font-body)", fontWeight: 500, textDecoration: "none",
+              transition: "all .25s", display: "inline-block",
             }}
-          >
-            <svg width={f.size} height={f.size * 3} viewBox="0 0 20 60" fill={f.color}>
-              <path d="M10,1 C10,1 17,12 16,28 C15,44 10,57 10,57 C10,57 5,44 4,28 C3,12 10,1 10,1 Z" opacity="0.8" />
-              <path d="M10,8 C12,14 13,22 12,32 C11,40 10,50 10,50" fill="none" stroke={f.color} strokeWidth="0.8" opacity="0.5" />
-            </svg>
+              onMouseEnter={e => { e.currentTarget.style.background = C.iri2; e.currentTarget.style.color = C.bg0; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = C.pearl; }}
+            >See all listings →</Link>
           </div>
-        ))}
 
-        {/* Hero text — bottom left */}
-        <div className="absolute bottom-24 left-6 md:left-16 max-w-lg">
-          <p className="text-[#E8734A] text-xs font-bold uppercase tracking-[0.2em] mb-3">
-            Mumbai&apos;s #1 PG Platform
-          </p>
-          <h1 className="font-display text-5xl md:text-[3.75rem] font-black text-white leading-[1.0] mb-5">
-            Find your<br /><em className="italic text-[#F9D5C4]">perfect nest</em><br />in Mumbai
-          </h1>
-          <Link
-            href="/tenant/search"
-            className="inline-flex items-center gap-2 text-white/80 text-sm font-semibold border-b border-white/40 pb-0.5 hover:text-white hover:border-white transition-all"
-          >
-            Browse all listings <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24 }}>
+            {LISTINGS.map((l, i) => <ListingCard key={l.id} listing={l} delay={i * 0.07}/>)}
+          </div>
         </div>
       </section>
 
-      {/* ── SEARCH BAR — floating over hero bottom ────────── */}
-      <div className="relative z-10 -mt-10 px-4 md:px-10 max-w-4xl mx-auto">
-        <div className="bg-[#FDFBF8] rounded-2xl shadow-2xl border border-[#E2DDD6] flex flex-col md:flex-row items-stretch overflow-hidden">
-
-          <div className="flex-1 flex flex-col justify-center px-5 py-4 border-b md:border-b-0 md:border-r border-[#E2DDD6]">
-            <span className="text-[9px] font-bold text-[#A09488] uppercase tracking-widest mb-1">
-              City / Area
-            </span>
-            <select
-              value={searchArea}
-              onChange={(e) => setSearchArea(e.target.value)}
-              className="text-sm font-semibold text-[#2C3040] bg-transparent outline-none appearance-none cursor-pointer"
-            >
-              <option value="">Any area in Mumbai</option>
-              {AREAS.filter((a) => a !== "All").map((a) => (
-                <option key={a} value={a}>{a}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center px-5 py-4 border-b md:border-b-0 md:border-r border-[#E2DDD6]">
-            <span className="text-[9px] font-bold text-[#A09488] uppercase tracking-widest mb-1">
-              Type of Sharing
-            </span>
-            <select
-              value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
-              className="text-sm font-semibold text-[#2C3040] bg-transparent outline-none appearance-none cursor-pointer"
-            >
-              <option value="">Any type</option>
-              <option value="single">Single</option>
-              <option value="double">Double</option>
-              <option value="triple">Triple</option>
-              <option value="dormitory">Dormitory</option>
-            </select>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center px-5 py-4 border-b md:border-b-0 md:border-r border-[#E2DDD6]">
-            <span className="text-[9px] font-bold text-[#A09488] uppercase tracking-widest mb-1">
-              Max Rent
-            </span>
-            <select
-              value={searchPrice}
-              onChange={(e) => setSearchPrice(e.target.value)}
-              className="text-sm font-semibold text-[#2C3040] bg-transparent outline-none appearance-none cursor-pointer"
-            >
-              <option value="">Any price</option>
-              <option value="5000">Up to ₹5,000</option>
-              <option value="10000">Up to ₹10,000</option>
-              <option value="15000">Up to ₹15,000</option>
-              <option value="20000">Up to ₹20,000</option>
-            </select>
-          </div>
-
-          <Magnetic strength={0.2} style={{ flexShrink: 0 }}>
-            <Link
-              href={buildSearchUrl()}
-              className="flex items-center justify-center gap-2 bg-[#E8734A] text-white px-8 py-5 font-bold text-sm hover:bg-[#C5522E] transition-colors"
-            >
-              <Search className="w-4 h-4" />
-              Search
-            </Link>
-          </Magnetic>
-        </div>
-      </div>
-
-      {/* ── AREA FILTER TABS ──────────────────────────────── */}
-      <section className="mt-10 px-4 md:px-10 max-w-7xl mx-auto">
-        <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-hide">
-          {AREAS.map((area) => (
-            <button
-              key={area}
-              onClick={() => setActiveArea(area)}
-              className={`flex-shrink-0 px-5 py-2 rounded-full text-sm font-semibold transition-all ${
-                activeArea === area
-                  ? "bg-[#E8734A] text-white shadow-md"
-                  : "bg-[#EDE8E0] text-[#5C5450] hover:bg-[#DDD6CA]"
-              }`}
-            >
-              {area}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* ── PG CARDS CAROUSEL ─────────────────────────────── */}
-      <section className="mt-8 pb-16 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 md:px-10 mb-6 flex items-center justify-between">
-          <h2 className="font-display text-2xl font-black text-[#2C3040]">
-            Featured nests
+      {/* ── WHY US ─────────────────────────────────────────────── */}
+      <section style={{ padding: "100px 48px", position: "relative" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(38px,4.5vw,60px)", fontWeight: 800, color: C.pearl, letterSpacing: "-0.03em", lineHeight: 1.05, textAlign: "center", marginBottom: 72 }}>
+            Built like a <em style={{ fontStyle: "italic" }}><IriText>flock</IriText></em>.<br/>Trusted like family.
           </h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveCard(prevIdx)}
-              className="w-9 h-9 rounded-full border border-[#E2DDD6] flex items-center justify-center hover:bg-[#EDE8E0] hover:border-[#E8734A] transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4 text-[#5C5450]" />
-            </button>
-            <button
-              onClick={() => setActiveCard(nextIdx)}
-              className="w-9 h-9 rounded-full border border-[#E2DDD6] flex items-center justify-center hover:bg-[#EDE8E0] hover:border-[#E8734A] transition-colors"
-            >
-              <ChevronRight className="w-4 h-4 text-[#5C5450]" />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-center gap-4 px-4">
-          {/* Left peeking card */}
-          <div
-            className="hidden md:block w-60 flex-shrink-0 opacity-50 scale-90 origin-right transition-all duration-300 cursor-pointer"
-            onClick={() => setActiveCard(prevIdx)}
-          >
-            <ListingCard listing={LISTINGS[prevIdx]} />
-          </div>
-
-          {/* Center / active card */}
-          <div className="w-full max-w-[340px] flex-shrink-0 transition-all duration-300 drop-shadow-2xl">
-            <ListingCard listing={LISTINGS[activeCard]} featured />
-          </div>
-
-          {/* Right peeking card */}
-          <div
-            className="hidden md:block w-60 flex-shrink-0 opacity-50 scale-90 origin-left transition-all duration-300 cursor-pointer"
-            onClick={() => setActiveCard(nextIdx)}
-          >
-            <ListingCard listing={LISTINGS[nextIdx]} />
-          </div>
-        </div>
-
-        {/* Dot pagination */}
-        <div className="flex items-center justify-center gap-2 mt-8">
-          {LISTINGS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveCard(i)}
-              className={`rounded-full transition-all duration-300 ${
-                i === activeCard
-                  ? "w-6 h-2.5 bg-[#E8734A]"
-                  : "w-2.5 h-2.5 bg-[#C4BAB0] hover:bg-[#A09488]"
-              }`}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* ── CATEGORIES GRID ───────────────────────────────── */}
-      <section className="bg-[#F0F3F8] py-20">
-        <div className="max-w-5xl mx-auto px-6 md:px-10">
-          <h2 className="font-display text-4xl md:text-5xl font-black text-[#2C3040] text-center mb-2">
-            Categories &amp; Information
-          </h2>
-          <p className="text-[#7A7A8A] text-center mb-12 text-sm">
-            Everything you need to find and manage your perfect PG
-          </p>
-
-          <div className="grid grid-cols-3 gap-3 md:gap-4">
-            {CATEGORIES.map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="pg-card flex items-center gap-3 bg-[#FDFBF8] rounded-2xl p-4 border border-[#E2DDD6] hover:shadow-md transition-all cursor-pointer group"
-              >
-                <div className="w-11 h-11 bg-[#6B7FA3] rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[#4A5A7A] transition-colors">
-                  <Icon className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xs md:text-sm font-semibold text-[#2C3040] leading-tight">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHY PGOWNS ────────────────────────────────────── */}
-      <section className="py-20 bg-[#F7F4EF]">
-        <div className="max-w-5xl mx-auto px-6 md:px-10">
-          <h2 className="font-display text-4xl font-black text-[#2C3040] text-center mb-2">
-            Why choose <em className="italic text-[#E8734A]">PG Owns</em>?
-          </h2>
-          <p className="text-[#7A7A8A] text-center mb-12 text-sm">
-            Built specifically for Mumbai PG seekers
-          </p>
-
-          <div className="grid md:grid-cols-3 gap-6">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24 }}>
             {[
-              {
-                icon: Shield,
-                title: "Transparent Deposit",
-                desc: "See your exact deposit balance at all times. Every deduction requires a reason. Dispute unfair claims directly.",
-                color: "#6B7FA3",
-              },
-              {
-                icon: IndianRupee,
-                title: "Secure Payments",
-                desc: "Pay rent and deposit through Razorpay. Your money is held safely and only released at contract end.",
-                color: "#E8734A",
-              },
-              {
-                icon: Star,
-                title: "Verified Listings",
-                desc: "Every PG goes through verification. Photos are real, amenities accurate, and rules clearly stated.",
-                color: "#7C6E9E",
-              },
-            ].map((f) => (
-              <div
-                key={f.title}
-                className="feather-card pg-card p-7 group hover:shadow-lg transition-all"
+              { n: "01", t: "Transparent Deposits", d: "See your exact balance at every moment. Every deduction needs a reason — dispute unfair claims directly inside the app." },
+              { n: "02", t: "Verified Roosts", d: "Every PG is hand-verified. Photos are real, amenities are accurate, and rules are clearly stated upfront." },
+              { n: "03", t: "Razorpay Secure", d: "Pay through Razorpay — money is held safely until your contract begins. No middlemen, no surprises." },
+            ].map(f => (
+              <Glass key={f.n} style={{ padding: 36, position: "relative", overflow: "hidden", transition: "transform .4s" }}
+                onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = "translateY(-6px)")}
+                onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = "none")}
               >
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: f.color + "18" }}>
-                  <f.icon className="w-5 h-5" style={{ color: f.color }} />
-                </div>
-                <h3 className="font-display font-bold text-[#2C3040] text-lg mb-2">{f.title}</h3>
-                <p className="text-sm text-[#7A7A8A] leading-relaxed mb-4">{f.desc}</p>
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#E8734A] hover:gap-2.5 transition-all"
-                >
-                  Read More <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
+                <div style={{ position: "absolute", top: -18, right: -18, opacity: 0.04 }}><FeatherDecor size={110} color={C.iri1} opacity={1}/></div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: C.iri2, letterSpacing: "0.22em", marginBottom: 22, fontWeight: 600 }}>{f.n}</div>
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 700, color: C.pearl, marginBottom: 12, letterSpacing: "-0.02em" }}>{f.t}</h3>
+                <p style={{ fontSize: 13, color: C.textDim, lineHeight: 1.75 }}>{f.d}</p>
+              </Glass>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── OWNER CTA ─────────────────────────────────────── */}
-      <section className="bg-[#4A5A7A] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-5">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl" />
-        </div>
-        {/* Feather drift decorations */}
-        <div className="feather-drift absolute top-8 right-20 pointer-events-none" style={{ animationDelay: "0.5s" }}>
-          <svg width="20" height="60" viewBox="0 0 20 60" fill="#F5C4B0" opacity="0.2">
-            <path d="M10,1 C10,1 17,12 16,28 C15,44 10,57 10,57 C10,57 5,44 4,28 C3,12 10,1 10,1 Z" />
-          </svg>
-        </div>
-        <div className="feather-drift absolute bottom-4 left-10 pointer-events-none" style={{ animationDelay: "1.5s", animationDuration: "8s" }}>
-          <svg width="14" height="42" viewBox="0 0 20 60" fill="#B8C4D8" opacity="0.2">
-            <path d="M10,1 C10,1 17,12 16,28 C15,44 10,57 10,57 C10,57 5,44 4,28 C3,12 10,1 10,1 Z" />
-          </svg>
-        </div>
-        <div className="relative z-10 max-w-5xl mx-auto px-6 md:px-10 py-20 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div>
-            <p className="text-[#F9D5C4] text-xs font-bold uppercase tracking-[0.2em] mb-3">For PG Owners</p>
-            <h2 className="font-display text-4xl font-black text-white mb-3">
-              Own a PG? List it for free.
-            </h2>
-            <p className="text-white/55 max-w-md leading-relaxed text-sm">
-              Reach thousands of verified tenants. Manage bookings, collect payments, and handle deposits — all from one dashboard.
-            </p>
-          </div>
-          <Link href="/signup?role=owner" className="feather-btn flex-shrink-0 text-sm font-black">
-            List your PG <ArrowRight className="w-4 h-4" />
-          </Link>
+      {/* ── OWNER CTA ──────────────────────────────────────────── */}
+      <section style={{ padding: "100px 48px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <Glass style={{ padding: "72px 60px", position: "relative", overflow: "hidden", background: `linear-gradient(135deg, rgba(167,139,250,0.12), rgba(96,165,250,0.05))` }}>
+            <div style={{ position: "absolute", top: -50, right: -30, opacity: 0.14, transform: "rotate(18deg)" }}><FeatherDecor size={200} color={C.iri1} opacity={1}/></div>
+            <div style={{ position: "absolute", bottom: -60, right: 140, opacity: 0.09, transform: "rotate(-14deg)" }}><FeatherDecor size={150} color={C.iri3} opacity={1}/></div>
+            <div style={{ position: "relative", zIndex: 2, maxWidth: 640 }}>
+              <div style={{ fontSize: 10, color: C.iri2, letterSpacing: "0.32em", textTransform: "uppercase", marginBottom: 18, fontWeight: 700 }}>For PG Owners</div>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(34px,4vw,52px)", fontWeight: 800, color: C.pearl, letterSpacing: "-0.03em", lineHeight: 1.05, marginBottom: 18 }}>
+                Open the door.<br/><em style={{ fontStyle: "italic" }}><IriText>The flock will come.</IriText></em>
+              </h2>
+              <p style={{ fontSize: 15, color: C.textDim, lineHeight: 1.65, marginBottom: 32, maxWidth: 500 }}>
+                Reach thousands of verified Mumbai tenants. Manage bookings, deposits, and payments — all from one minimal dashboard.
+              </p>
+              <Magnetic>
+                <Link href="/signup" style={{
+                  background: C.pearl, color: C.bg0, fontSize: 14, fontWeight: 700,
+                  padding: "15px 34px", borderRadius: 99, textDecoration: "none",
+                  display: "inline-flex", alignItems: "center", gap: 10,
+                  boxShadow: "0 12px 40px rgba(255,255,255,0.18)",
+                }}>List your PG →</Link>
+              </Magnetic>
+            </div>
+          </Glass>
         </div>
       </section>
 
-      {/* ── FOOTER ────────────────────────────────────────── */}
-      <footer className="bg-[#364466]">
-        <div className="max-w-6xl mx-auto px-6 md:px-10 py-8 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.svg" alt="PGOwns" width={36} height={36} className="brightness-0 invert" />
-            <span className="font-display text-lg font-black text-white tracking-tight">Owns</span>
-          </Link>
-          <p className="text-xs text-white/30">© 2024 PG Owns. Built for Mumbai.</p>
+      {/* ── FOOTER ─────────────────────────────────────────────── */}
+      <footer style={{ padding: "52px 48px 32px", borderTop: `1px solid ${C.border}` }}>
+        <div style={{ maxWidth: 1380, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Image src="/logo.svg" alt="PG Owns" width={28} height={28} className="brightness-0 invert" style={{ opacity: 0.5 }}/>
+            <span style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 15, color: "rgba(232,236,244,0.5)" }}>PG Owns</span>
+          </div>
+          <div style={{ fontSize: 11, color: C.textMute }}>© 2026 PG Owns · Built with feathers in Mumbai</div>
+          <div style={{ display: "flex", gap: 24 }}>
+            {[["Find PGs", "/tenant/search"], ["List PG", "/signup"], ["Sign in", "/login"]].map(([l, h]) => (
+              <Link key={l as string} href={h as string} style={{ fontSize: 12, color: C.textMute, textDecoration: "none", transition: "color .2s" }}
+                onMouseEnter={e => (e.currentTarget.style.color = C.pearl)}
+                onMouseLeave={e => (e.currentTarget.style.color = C.textMute)}
+              >{l as string}</Link>
+            ))}
+          </div>
         </div>
       </footer>
-
-    </div>
-  );
-}
-
-// ── Listing Card ─────────────────────────────────────────────
-
-function ListingCard({
-  listing,
-  featured = false,
-}: {
-  listing: (typeof LISTINGS)[0];
-  featured?: boolean;
-}) {
-  return (
-    <div
-      className={`pg-card bg-[#FDFBF8] rounded-3xl overflow-hidden relative ${
-        featured ? "shadow-2xl ring-2 ring-[#E8734A]/10" : "shadow-md"
-      }`}
-    >
-      {/* Tricolor top bar */}
-      <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#E8734A] via-[#6B7FA3] to-[#7C6E9E] z-10" />
-
-      {/* Gradient image placeholder */}
-      <div className={`h-44 bg-gradient-to-br ${listing.gradient} relative`}>
-        {listing.verified && (
-          <span className="absolute top-3 left-3 bg-[#E8734A] text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wide">
-            Verified
-          </span>
-        )}
-        <span className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm text-white text-[10px] font-semibold px-2.5 py-1 rounded-full">
-          {listing.type}
-        </span>
-        {/* Decorative dots */}
-        <div className="absolute bottom-4 right-4 flex gap-1.5">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/30" />
-          ))}
-        </div>
-      </div>
-
-      <div className="p-5">
-        <h3 className="font-display font-bold text-[#2C3040] text-base mb-1 leading-tight">
-          {listing.name}
-        </h3>
-        <div className="flex items-center gap-1 text-[#A09488] text-xs mb-4">
-          <MapPin className="w-3 h-3" /> {listing.area}, Mumbai
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="font-black text-xl text-[#E8734A]">
-              ₹{listing.rent.toLocaleString("en-IN")}
-            </span>
-            <span className="text-[#A09488] text-xs">/mo</span>
-          </div>
-          <Link
-            href={`/tenant/search?area=${encodeURIComponent(listing.area)}`}
-            className="bg-[#E8734A] text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-[#C5522E] transition-colors"
-          >
-            View →
-          </Link>
-        </div>
-      </div>
     </div>
   );
 }
