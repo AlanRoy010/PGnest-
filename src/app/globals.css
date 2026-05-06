@@ -217,14 +217,20 @@ h1, h2, h3, h4 {
   background: linear-gradient(90deg, rgba(232,115,74,0.12), transparent);
 }
 
-/* ── Feather divider — SVG pattern ─────────────────────────────── */
+/* ── Feather divider — gradient line ────────────────────────────── */
 .feather-divider {
-  height: 12px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='12'%3E%3Cellipse cx='20' cy='6' rx='17' ry='4' fill='none' stroke='%23C4BAB0' stroke-width='1' opacity='0.7'/%3E%3Cline x1='20' y1='2' x2='20' y2='10' stroke='%23C4BAB0' stroke-width='0.5' opacity='0.5'/%3E%3C/svg%3E");
-  background-repeat: repeat-x;
-  background-position: center;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #B8C4D8, #C4BADB, #B8C4D8, transparent);
   border: none;
   margin: 16px 0;
+}
+
+/* ── Iridescent gradient text ────────────────────────────────────── */
+.iridescent-text {
+  background: linear-gradient(135deg, #6B7FA3, #7C6E9E, #6B7FA3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 /* ── Card with tricolor top bar ─────────────────────────────────── */
@@ -278,3 +284,16 @@ h1, h2, h3, h4 {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+@keyframes scale-up {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes feather-float {
+  0%, 100% { transform: translateY(0px) rotate(-12deg); }
+  50%       { transform: translateY(-22px) rotate(12deg); }
+}
+
+.animate-scale-up { animation: scale-up 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1) forwards; }
+.animate-feather-float { animation: feather-float 6s ease-in-out infinite; }

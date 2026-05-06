@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "sonner";
 import ToastFallingFeathers from "@/components/shared/FallingFeathers";
+import { CursorTrail } from "@/components/FeatherFX";
 
 export const metadata: Metadata = {
   title: "PG Owns — Find Your Perfect PG in Mumbai",
@@ -18,6 +19,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {children}
+        <CursorTrail />
         <ToastFallingFeathers />
         <Toaster
           position="top-right"

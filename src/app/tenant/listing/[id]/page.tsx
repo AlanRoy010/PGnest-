@@ -8,11 +8,12 @@ import {
   Loader2, CheckCircle, Calendar, X, Clock, BedDouble,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import { toast } from "sonner";
 import type { Listing } from "@/types";
 import FallingFeathers, { spawnFeathers, FeatherSVG } from "@/components/FallingFeathers";
+import { Magnetic } from "@/components/FeatherFX";
 
 type OwnerSnippet = { full_name: string; phone: string | null };
 type ListingWithOwner = Omit<Listing, "owner"> & { owner?: OwnerSnippet | null };
@@ -68,7 +69,9 @@ interface RawRoom {
 export default function ListingDetailPage() {
   const supabase = useMemo(() => createClient(), []);
   const params = useParams();
-  const { profile } = useUser();
+  const router = useRouter();
+  const { profile, loading: userLoading } = useUser();
+  const isLoggedIn = !userLoading && profile !== null;
 
   const [listing, setListing] = useState<ListingWithOwner | null>(null);
   const [loading, setLoading] = useState(true);
@@ -112,6 +115,13 @@ export default function ListingDetailPage() {
     };
     prefillDetails();
   }, [profile, supabase]);
+
+  const redirectToAuth = (dest: "/login" | "/signup" = "/login") => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("redirect_after_auth", window.location.href);
+    }
+    router.push(dest);
+  };
 
   const closeVisitModal = () => {
     setShowVisit(false);
@@ -333,13 +343,40 @@ export default function ListingDetailPage() {
               </span>
             </div>
 
-            <button
-              onClick={() => setShowVisit(true)}
-              className="feather-btn w-full mt-4 py-3 text-sm"
-            >
-              <Calendar className="w-4 h-4" />
-              Schedule a visit
-            </button>
+            {isLoggedIn ? (
+              <Magnetic strength={0.2} style={{ display: "block" }}>
+                <button
+                  onClick={() => setShowVisit(true)}
+                  className="feather-btn w-full mt-4 py-3 text-sm"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Schedule a visit
+                </button>
+              </Magnetic>
+            ) : (
+              <div className="mt-4 feather-card p-4 text-center">
+                <p className="text-sm font-medium text-[#2C3040] mb-1">
+                  Sign in to schedule a visit
+                </p>
+                <p className="text-xs text-[#7A7A8A] mb-3">
+                  Book a tour of this PG in seconds
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => redirectToAuth("/login")}
+                    className="feather-btn flex-1 py-2 text-xs"
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => redirectToAuth("/signup")}
+                    className="feather-btn feather-btn-ghost flex-1 py-2 text-xs"
+                  >
+                    Create account
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Owner info */}
@@ -367,12 +404,14 @@ export default function ListingDetailPage() {
       <BedReservationSection
         listingId={listing.id}
         userId={profile?.id ?? null}
+        isLoggedIn={isLoggedIn}
+        onAuthRequired={redirectToAuth}
       />
 
       {/* Schedule Visit Modal */}
       {showVisit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 overflow-y-auto py-8">
-          <div className="bg-[#FDFBF8] rounded-2xl shadow-xl w-full max-w-md my-auto animate-fade-up overflow-hidden">
+          <div className="bg-[#FDFBF8] rounded-2xl shadow-xl w-full max-w-md my-auto animate-scale-up overflow-hidden">
             {/* Modal tricolor top bar + feather decor header */}
             <div className="relative bg-gradient-to-br from-[#4A5A7A] to-[#6B7FA3] p-5 overflow-hidden">
               <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#E8734A] via-[#6B7FA3] to-[#7C6E9E]" />
@@ -499,9 +538,13 @@ export default function ListingDetailPage() {
 function BedReservationSection({
   listingId,
   userId,
+  isLoggedIn,
+  onAuthRequired,
 }: {
   listingId: string;
   userId: string | null;
+  isLoggedIn: boolean;
+  onAuthRequired: (dest?: "/login" | "/signup") => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [sections, setSections] = useState<FloorSection[]>([]);
@@ -767,25 +810,43 @@ function BedReservationSection({
             />
           </div>
 
-          {userId ? (
-            <button
-              onClick={handleReserve}
-              disabled={reserving}
-              className="feather-btn w-full py-3 text-sm"
-              style={{ opacity: reserving ? 0.5 : 1 }}
-            >
-              {reserving ? <Loader2 className="w-4 h-4 animate-spin" /> : <BedDouble className="w-4 h-4" />}
-              Reserve This Bed
-            </button>
-          ) : (
-            <div className="text-center py-3 bg-[#F7F4EF] rounded-xl border border-[#E2DDD6]">
-              <p className="text-sm text-[#7A7A8A] mb-2">Please sign in to reserve a bed</p>
-              <Link
-                href="/login"
-                className="text-sm text-[#E8734A] font-medium hover:underline"
+          {isLoggedIn ? (
+            <Magnetic strength={0.2} style={{ display: "block" }}>
+              <button
+                onClick={handleReserve}
+                disabled={reserving}
+                className="feather-btn w-full py-3 text-sm"
+                style={{ opacity: reserving ? 0.5 : 1 }}
               >
-                Sign in →
-              </Link>
+                {reserving ? <Loader2 className="w-4 h-4 animate-spin" /> : <BedDouble className="w-4 h-4" />}
+                Reserve This Bed
+              </button>
+            </Magnetic>
+          ) : (
+            <div className="feather-card p-5 text-center">
+              <div className="w-10 h-10 bg-[#FDF0EB] rounded-xl flex items-center justify-center mx-auto mb-3">
+                <BedDouble className="w-5 h-5 text-[#E8734A]" />
+              </div>
+              <p className="font-display font-bold text-[#2C3040] mb-1">
+                Sign in to reserve this bed
+              </p>
+              <p className="text-xs text-[#7A7A8A] mb-4">
+                Create a free account to book your spot — takes under a minute
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onAuthRequired("/login")}
+                  className="feather-btn flex-1 py-2.5 text-sm"
+                >
+                  Sign in
+                </button>
+                <button
+                  onClick={() => onAuthRequired("/signup")}
+                  className="feather-btn feather-btn-ghost flex-1 py-2.5 text-sm"
+                >
+                  Create account
+                </button>
+              </div>
             </div>
           )}
         </div>

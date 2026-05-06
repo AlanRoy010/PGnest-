@@ -1,32 +1,59 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { Suspense, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, AMENITY_LABELS, AREAS_MUMBAI } from "@/lib/utils";
+import { useSearchParams } from "next/navigation";
 import {
-  Search, MapPin, X, SlidersHorizontal,
+  Search, MapPin, X, SlidersHorizontal, AlertCircle,
 } from "lucide-react";
 import type { Listing } from "@/types";
 import Link from "next/link";
 import PigeonLoader from "@/components/shared/PigeonLoader";
+import { TiltCard } from "@/components/FeatherFX";
 
-export default function TenantSearchPage() {
+// Inner component uses useSearchParams — must be inside <Suspense>
+function SearchPageContent() {
+  const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Filters
-  const [area, setArea] = useState("");
+  // Initialize from URL params so homepage search bar works
+  const [area, setArea] = useState(searchParams.get("area") || "");
   const [minRent, setMinRent] = useState("");
-  const [maxRent, setMaxRent] = useState("");
+  const [maxRent, setMaxRent] = useState(searchParams.get("max_rent") || "");
   const [gender, setGender] = useState("");
   const [furnishing, setFurnishing] = useState("");
-  const [roomType, setRoomType] = useState("");
+  const [roomType, setRoomType] = useState(searchParams.get("room_type") || "");
+
+  // Debounced filter values — fetch only fires 400ms after the user stops typing
+  const [debouncedArea, setDebouncedArea] = useState(area);
+  const [debouncedMinRent, setDebouncedMinRent] = useState(minRent);
+  const [debouncedMaxRent, setDebouncedMaxRent] = useState(maxRent);
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedArea(area);
+      setDebouncedMinRent(minRent);
+      setDebouncedMaxRent(maxRent);
+    }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [area, minRent, maxRent]);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
+    setFetchError(false);
+    // 15-second timeout — handles cold Supabase project wakeup
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), 15000)
+    );
     try {
       let query = supabase
         .from("listings")
@@ -34,19 +61,27 @@ export default function TenantSearchPage() {
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      if (area) query = query.ilike("area", `%${area}%`);
-      if (minRent) query = query.gte("monthly_rent", Number(minRent));
-      if (maxRent) query = query.lte("monthly_rent", Number(maxRent));
-      if (gender) query = query.in("gender_preference", [gender, "any"]);
-      if (furnishing) query = query.eq("furnishing", furnishing);
-      if (roomType) query = query.eq("room_type", roomType);
+      if (debouncedArea)     query = query.ilike("area", `%${debouncedArea}%`);
+      if (debouncedMinRent)  query = query.gte("monthly_rent", Number(debouncedMinRent));
+      if (debouncedMaxRent)  query = query.lte("monthly_rent", Number(debouncedMaxRent));
+      if (gender)            query = query.in("gender_preference", [gender, "any"]);
+      if (furnishing)        query = query.eq("furnishing", furnishing);
+      if (roomType)          query = query.eq("room_type", roomType);
 
-      const { data } = await query;
+      const { data, error } = await Promise.race([query, timeout]);
+      if (error) {
+        console.error("Listings fetch error:", error.message);
+        setFetchError(true);
+      }
       setListings(data || []);
+    } catch (err) {
+      console.error("Listings fetch failed:", err);
+      setFetchError(true);
+      setListings([]);
     } finally {
       setLoading(false);
     }
-  }, [supabase, area, minRent, maxRent, gender, furnishing, roomType]);
+  }, [supabase, debouncedArea, debouncedMinRent, debouncedMaxRent, gender, furnishing, roomType]);
 
   useEffect(() => {
     fetchListings();
@@ -201,8 +236,24 @@ export default function TenantSearchPage() {
         </div>
       )}
 
+      {/* Error state */}
+      {!loading && fetchError && (
+        <div className="feather-card text-center py-16 px-8">
+          <AlertCircle className="w-10 h-10 text-[#E8734A] mx-auto mb-4" />
+          <h3 className="font-display font-bold text-[#2C3040] mb-1">
+            Couldn&apos;t load listings
+          </h3>
+          <p className="text-sm text-[#7A7A8A] mb-5">
+            Your database may be waking up — this can take ~30 seconds on the free tier.
+          </p>
+          <button onClick={fetchListings} className="feather-btn mx-auto text-sm">
+            Try again
+          </button>
+        </div>
+      )}
+
       {/* Empty state */}
-      {!loading && listings.length === 0 && (
+      {!loading && !fetchError && listings.length === 0 && (
         <div className="feather-card text-center py-20 px-8">
           <Search className="w-10 h-10 text-[#C4BAB0] mx-auto mb-4" />
           <h3 className="font-display font-bold text-[#2C3040] mb-1">
@@ -223,11 +274,11 @@ export default function TenantSearchPage() {
       )}
 
       {/* Listings grid */}
-      {!loading && listings.length > 0 && (
+      {!loading && !fetchError && listings.length > 0 && (
         <div className="grid md:grid-cols-2 gap-4 stagger">
           {listings.map((listing) => (
+            <TiltCard key={listing.id}>
             <Link
-              key={listing.id}
               href={`/tenant/listing/${listing.id}`}
               className="pg-card feather-card overflow-hidden group block"
             >
@@ -270,7 +321,7 @@ export default function TenantSearchPage() {
                     {listing.amenities.slice(0, 4).map((a) => (
                       <span
                         key={a}
-                        className="text-xs bg-[#EDE8E0] text-[#5C5450] px-2 py-0.5 rounded-md"
+                        className="text-xs bg-[#F0F3F8] text-[#4A5A7A] px-2 py-0.5 rounded-md font-medium"
                       >
                         {AMENITY_LABELS[a] || a}
                       </span>
@@ -301,10 +352,27 @@ export default function TenantSearchPage() {
                 </div>
               </div>
             </Link>
+            </TiltCard>
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+// Suspense wrapper required by Next.js 14 for useSearchParams
+export default function TenantSearchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center h-64 gap-4">
+          <PigeonLoader size="md" />
+          <p className="text-sm text-[#A09488]">Finding your perfect nest…</p>
+        </div>
+      }
+    >
+      <SearchPageContent />
+    </Suspense>
   );
 }
 

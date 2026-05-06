@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Search, BookOpen, Shield, LogOut, Menu } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Search, BookOpen, Shield, LogOut, Menu, UserCircle } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
@@ -10,10 +10,11 @@ import { getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import PigeonLogo from "@/components/shared/PigeonLogo";
 
+// Nav items — bookings and deposit require auth
 const NAV_ITEMS = [
-  { href: "/tenant/search",   label: "Find PGs",    icon: Search },
-  { href: "/tenant/bookings", label: "My Bookings", icon: BookOpen },
-  { href: "/tenant/deposit",  label: "My Deposit",  icon: Shield },
+  { href: "/tenant/search",   label: "Find PGs",    icon: Search,   requiresAuth: false },
+  { href: "/tenant/bookings", label: "My Bookings", icon: BookOpen, requiresAuth: true  },
+  { href: "/tenant/deposit",  label: "My Deposit",  icon: Shield,   requiresAuth: true  },
 ];
 
 export default function TenantLayout({
@@ -22,17 +23,16 @@ export default function TenantLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { profile, email } = useUser();
+  const router = useRouter();
+  const { profile, email, loading } = useUser();
+  const isLoggedIn = !loading && profile !== null;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
 
-  const handleSignOut = () => {
-    setShowSignOutModal(true);
-  };
+  const handleSignOut = () => setShowSignOutModal(true);
 
   const confirmSignOut = async () => {
     const supabase = createClient();
-
     try {
       await Promise.race([
         supabase.auth.signOut({ scope: "local" }),
@@ -43,10 +43,20 @@ export default function TenantLayout({
     } catch {
       console.log("SignOut timed out, clearing locally");
     }
-
     setShowSignOutModal(false);
     toast.success("Signed out successfully!");
     window.location.href = "/";
+  };
+
+  // For nav items that require auth — redirect to login if not signed in
+  const handleNavClick = (item: typeof NAV_ITEMS[0]) => {
+    setMobileOpen(false);
+    if (item.requiresAuth && !isLoggedIn) {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("redirect_after_auth", item.href);
+      }
+      router.push("/login");
+    }
   };
 
   const Sidebar = () => {
@@ -56,65 +66,95 @@ export default function TenantLayout({
           <Link href="/">
             <PigeonLogo size="md" />
           </Link>
-          <div className="mt-1 text-xs text-[#A09488]">Tenant Dashboard</div>
+          <div className="mt-1 text-xs text-[#A09488]">
+            {isLoggedIn ? "Tenant Dashboard" : "Browse listings"}
+          </div>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
           {NAV_ITEMS.map((item) => {
             const active = pathname.startsWith(item.href);
+            const locked = item.requiresAuth && !isLoggedIn;
             return (
               <Link
                 key={item.href}
-                href={item.href}
-                onClick={() => setMobileOpen(false)}
+                href={locked ? "#" : item.href}
+                onClick={() => handleNavClick(item)}
                 className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  active
+                  active && isLoggedIn
                     ? "nav-item-active text-[#C5522E]"
+                    : locked
+                    ? "text-[#C4BAB0] cursor-pointer hover:bg-[#EDE8E0]"
                     : "text-[#5C5450] hover:bg-[#EDE8E0] hover:text-[#2C3040]"
                 }`}
               >
-                {active && (
+                {active && isLoggedIn && (
                   <span
                     className="absolute left-3 w-1.5 h-1.5 rounded-full bg-[#E8734A]"
                     style={{ animation: "pigeon-bob 1.5s ease-in-out infinite" }}
                   />
                 )}
-                <item.icon className={`w-4 h-4 flex-shrink-0 ${active ? "text-[#E8734A]" : ""}`} />
+                <item.icon className={`w-4 h-4 flex-shrink-0 ${active && isLoggedIn ? "text-[#E8734A]" : locked ? "text-[#C4BAB0]" : ""}`} />
                 {item.label}
+                {locked && (
+                  <span className="ml-auto text-[10px] text-[#C4BAB0]">Sign in</span>
+                )}
               </Link>
             );
           })}
         </nav>
 
         <div className="px-3 py-4 border-t border-[#E2DDD6] space-y-1">
-          <Link
-            href="/tenant/profile"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#EDE8E0] transition-all"
-          >
-            <div className="w-8 h-8 rounded-full bg-[#FDF0EB] flex items-center justify-center text-xs font-semibold text-[#C5522E]">
-              {profile?.full_name
-                ? getInitials(profile.full_name)
-                : email
-                  ? email[0].toUpperCase()
-                  : "?"}
+          {isLoggedIn ? (
+            <>
+              <Link
+                href="/tenant/profile"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-[#EDE8E0] transition-all"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#FDF0EB] flex items-center justify-center text-xs font-semibold text-[#C5522E]">
+                  {profile?.full_name
+                    ? getInitials(profile.full_name)
+                    : email
+                      ? email[0].toUpperCase()
+                      : "?"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-[#2C3040] truncate">
+                    {profile?.full_name || (email ? email.split("@")[0] : "My Profile")}
+                  </div>
+                  <div className="text-xs text-[#A09488] truncate">
+                    {profile?.phone || email}
+                  </div>
+                </div>
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#5C5450] hover:bg-[#EDE8E0] hover:text-[#2C3040] transition-all w-full"
+              >
+                <LogOut className="w-4 h-4" />
+                Sign out
+              </button>
+            </>
+          ) : (
+            <div className="space-y-2 px-1">
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-center gap-2 w-full feather-btn py-2.5 text-sm"
+              >
+                <UserCircle className="w-4 h-4" />
+                Sign in
+              </Link>
+              <Link
+                href="/signup"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-center gap-2 w-full feather-btn feather-btn-ghost py-2.5 text-sm"
+              >
+                Create account
+              </Link>
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-[#2C3040] truncate">
-                {profile?.full_name || (email ? email.split("@")[0] : "My Profile")}
-              </div>
-              <div className="text-xs text-[#A09488] truncate">
-                {profile?.phone || email}
-              </div>
-            </div>
-          </Link>
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-[#5C5450] hover:bg-[#EDE8E0] hover:text-[#2C3040] transition-all w-full"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign out
-          </button>
+          )}
         </div>
       </div>
     );
@@ -159,7 +199,7 @@ export default function TenantLayout({
       {/* Sign out confirmation modal */}
       {showSignOutModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4">
-          <div className="feather-card w-full max-w-sm p-6 animate-fade-up shadow-xl">
+          <div className="feather-card w-full max-w-sm p-6 animate-scale-up shadow-xl">
             <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center mb-4">
               <LogOut className="w-5 h-5 text-red-500" />
             </div>

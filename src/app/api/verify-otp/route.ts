@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
+import { createHash } from "crypto";
 
 export async function POST(request: Request) {
   try {
@@ -8,13 +9,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Email and OTP are required" }, { status: 400 });
     }
 
+    const otpHash = createHash("sha256").update(otp).digest("hex");
     const supabase = createAdminClient();
 
     const { data, error } = await supabase
       .from("email_otps")
       .select("id, expires_at, used")
       .eq("email", email)
-      .eq("otp", otp)
+      .eq("otp", otpHash)
       .eq("used", false)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })

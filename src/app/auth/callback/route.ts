@@ -28,6 +28,9 @@ export async function GET(request: Request) {
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({ token_hash, type });
     if (!error) {
+      if (type === "recovery") {
+        return NextResponse.redirect(new URL("/auth/reset-password", origin));
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
@@ -37,12 +40,7 @@ export async function GET(request: Request) {
           .single();
 
         if (profile) {
-          return NextResponse.redirect(
-            new URL(
-              profile.role === "owner" ? "/owner/listings" : "/tenant/search",
-              origin
-            )
-          );
+          return NextResponse.redirect(new URL(roleRedirect(profile.role), origin));
         }
       }
     }
@@ -60,16 +58,17 @@ export async function GET(request: Request) {
           .single();
 
         if (profile) {
-          return NextResponse.redirect(
-            new URL(
-              profile.role === "owner" ? "/owner/listings" : "/tenant/search",
-              origin
-            )
-          );
+          return NextResponse.redirect(new URL(roleRedirect(profile.role), origin));
         }
       }
     }
   }
 
   return NextResponse.redirect(new URL("/login", origin));
+}
+
+function roleRedirect(role: string): string {
+  if (role === "admin") return "/admin/dashboard";
+  if (role === "owner") return "/owner/listings";
+  return "/tenant/search";
 }

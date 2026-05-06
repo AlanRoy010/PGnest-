@@ -25,7 +25,7 @@ const BLANK_FORM: CreateListingForm = {
   amenities: [], rules: [],
 };
 
-export default function AdminListingsPage() {
+export default function OwnerListingsPage() {
   const supabase = useMemo(() => createClient(), []);
   const { profile } = useUser();
 
@@ -48,12 +48,13 @@ export default function AdminListingsPage() {
       const { data } = await supabase
         .from("listings")
         .select("*")
+        .eq("owner_id", profile!.id)
         .order("created_at", { ascending: false });
       setListings(data || []);
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, profile]);
 
   useEffect(() => {
     if (profile) fetchListings();
@@ -71,7 +72,7 @@ export default function AdminListingsPage() {
       title: l.title, description: l.description, address: l.address,
       area: l.area, pincode: l.pincode, monthly_rent: l.monthly_rent,
       security_deposit: l.security_deposit, rooms_available: l.rooms_available,
-      total_rooms: l.total_rooms, beds_per_room: 1, gender_preference: l.gender_preference,
+      total_rooms: l.total_rooms, beds_per_room: l.beds_per_room ?? 1, gender_preference: l.gender_preference,
       furnishing: l.furnishing, room_type: l.room_type,
       amenities: l.amenities, rules: l.rules,
     });
@@ -219,10 +220,10 @@ export default function AdminListingsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="font-display text-2xl font-semibold text-[#2C3040]">
-            All Listings
+            Your Listings
           </h1>
           <p className="text-sm text-[#7A7A8A] mt-0.5">
-            {listings.length} listing{listings.length !== 1 ? "s" : ""} on the platform
+            {listings.length} listing{listings.length !== 1 ? "s" : ""}
           </p>
         </div>
         <button
@@ -238,7 +239,7 @@ export default function AdminListingsPage() {
         <div className="text-center py-20 bg-[#FDFBF8] border border-[#E2DDD6] rounded-2xl">
           <Home className="w-10 h-10 text-[#C4BAB0] mx-auto mb-4" />
           <h3 className="font-display font-semibold text-[#2C3040] mb-1">No listings yet</h3>
-          <p className="text-sm text-[#7A7A8A] mb-6">Create the first listing for the platform</p>
+          <p className="text-sm text-[#7A7A8A] mb-6">Add your first PG listing</p>
           <button onClick={openCreate} className="feather-btn px-5 py-2.5 text-sm">
             <Plus className="w-4 h-4" /> Create listing
           </button>

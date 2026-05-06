@@ -8,6 +8,7 @@ import {
   ChevronLeft, ChevronRight, Users, Home,
   Phone, Globe, Info, Wrench, FileText,
 } from "lucide-react";
+import { Magnetic, AmbientFeathers } from "@/components/FeatherFX";
 
 // ── Data ────────────────────────────────────────────────────
 
@@ -106,6 +107,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#F7F4EF] font-body overflow-x-hidden">
+      <AmbientFeathers count={10} />
 
       {/* ── NAV ───────────────────────────────────────────── */}
       <nav className="absolute top-0 inset-x-0 z-50">
@@ -138,9 +140,11 @@ export default function HomePage() {
             >
               Sign in
             </Link>
-            <Link href="/signup" className="feather-btn text-sm">
-              Get started
-            </Link>
+            <Magnetic strength={0.25}>
+              <Link href="/signup" className="feather-btn text-sm">
+                Get started
+              </Link>
+            </Magnetic>
           </div>
         </div>
       </nav>
@@ -262,13 +266,15 @@ export default function HomePage() {
             </select>
           </div>
 
-          <Link
-            href={buildSearchUrl()}
-            className="flex items-center justify-center gap-2 bg-[#E8734A] text-white px-8 py-5 font-bold text-sm hover:bg-[#C5522E] transition-colors flex-shrink-0"
-          >
-            <Search className="w-4 h-4" />
-            Search
-          </Link>
+          <Magnetic strength={0.2} style={{ flexShrink: 0 }}>
+            <Link
+              href={buildSearchUrl()}
+              className="flex items-center justify-center gap-2 bg-[#E8734A] text-white px-8 py-5 font-bold text-sm hover:bg-[#C5522E] transition-colors"
+            >
+              <Search className="w-4 h-4" />
+              Search
+            </Link>
+          </Magnetic>
         </div>
       </div>
 

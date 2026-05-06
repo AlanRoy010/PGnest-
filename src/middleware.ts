@@ -28,24 +28,31 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // Block unauthenticated users from all protected routes
+  // Block unauthenticated users from protected routes
+  // /tenant/search and /tenant/listing/* are public — only bookings/deposit require auth
   if (!user && (
     pathname.startsWith("/owner") ||
-    pathname.startsWith("/tenant") ||
-    pathname.startsWith("/admin")
+    pathname.startsWith("/admin") ||
+    pathname === "/tenant/bookings" ||
+    pathname.startsWith("/tenant/bookings/") ||
+    pathname === "/tenant/deposit" ||
+    pathname.startsWith("/tenant/deposit/")
   )) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Block non-admins from admin routes
-  if (user && pathname.startsWith("/admin")) {
+  // Block role mismatches from /admin and /owner routes
+  if (user && (pathname.startsWith("/admin") || pathname.startsWith("/owner"))) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single();
 
-    if (profile?.role !== "admin") {
+    if (pathname.startsWith("/admin") && profile?.role !== "admin") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    if (pathname.startsWith("/owner") && profile?.role !== "owner") {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
