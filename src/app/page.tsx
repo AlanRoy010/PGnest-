@@ -8,13 +8,15 @@ import { ShieldCheck, Star, Zap } from "lucide-react";
 
 // ── Design tokens ──────────────────────────────────────────────
 const C = {
-  bg:       "#F5F7FF",
-  bg1:      "#EEF1FB",
-  text:     "#14172b",
-  textDim:  "rgba(20,23,43,0.58)",
-  textMute: "rgba(20,23,43,0.35)",
-  border:   "rgba(20,23,43,0.08)",
-  card:     "rgba(255,255,255,0.82)",
+  bg:       "#EEEEEE",
+  bg1:      "#E4E4E4",
+  glass:    "rgba(255,255,255,0.52)",
+  glassBorder: "rgba(255,255,255,0.72)",
+  text:     "#0e1120",
+  textDim:  "rgba(10,12,28,0.82)",
+  textMute: "rgba(10,12,28,0.58)",
+  border:   "rgba(255,255,255,0.55)",
+  card:     "rgba(255,255,255,0.48)",
   iri1:     "#a78bfa",
   iri2:     "#60a5fa",
   iri3:     "#34d399",
@@ -46,14 +48,14 @@ function IriText({ children }: { children: React.ReactNode }) {
 function Card({ children, style = {}, hover = false, ...rest }: React.HTMLAttributes<HTMLDivElement> & { style?: React.CSSProperties; hover?: boolean }) {
   return (
     <div style={{
-      background: C.card,
-      backdropFilter: "blur(20px) saturate(160%)",
-      WebkitBackdropFilter: "blur(20px) saturate(160%)",
-      border: `1px solid ${hover ? "rgba(167,139,250,0.3)" : C.border}`,
+      background: hover ? "rgba(255,255,255,0.62)" : C.card,
+      backdropFilter: "blur(32px) saturate(180%)",
+      WebkitBackdropFilter: "blur(32px) saturate(180%)",
+      border: `1px solid ${hover ? "rgba(255,255,255,0.82)" : "rgba(255,255,255,0.55)"}`,
       borderRadius: 20,
       boxShadow: hover
-        ? "0 20px 60px rgba(96,165,250,0.12), 0 4px 16px rgba(0,0,0,0.06)"
-        : "0 2px 24px rgba(20,23,43,0.07), 0 1px 4px rgba(0,0,0,0.04)",
+        ? "0 20px 60px rgba(96,165,250,0.14), 0 4px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)"
+        : "0 4px 24px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.8)",
       transition: "all 0.35s cubic-bezier(.2,.9,.3,1)",
       ...style,
     }} {...rest}>
@@ -70,23 +72,20 @@ function Nav({ scrolled }: { scrolled: boolean }) {
       padding: scrolled ? "14px 56px" : "22px 56px",
       display: "flex", alignItems: "center", justifyContent: "space-between",
       transition: "all 0.4s cubic-bezier(.2,.9,.3,1)",
-      background: scrolled ? "rgba(245,247,255,0.88)" : "transparent",
-      backdropFilter: scrolled ? "blur(20px) saturate(160%)" : "none",
-      WebkitBackdropFilter: scrolled ? "blur(20px) saturate(160%)" : "none",
+      background: scrolled ? "rgba(238,238,238,0.45)" : "transparent",
+      backdropFilter: scrolled ? "blur(32px) saturate(180%)" : "none",
+      WebkitBackdropFilter: scrolled ? "blur(32px) saturate(180%)" : "none",
       borderBottom: scrolled ? `1px solid ${C.border}` : "1px solid transparent",
     }}>
-      <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-        <Image src="/logo.svg" alt="PG Owns" width={34} height={34} />
-        <div>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 16, color: C.text, letterSpacing: "-0.02em", lineHeight: 1 }}>
-            PG <em style={{ fontStyle: "italic", fontWeight: 400 }}>Owns</em>
-          </div>
-          <div style={{ fontSize: 8, color: C.textMute, letterSpacing: "0.2em", textTransform: "uppercase", marginTop: 2 }}>Find your nest</div>
+      <Link href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+        <Image src="/logo.svg" alt="PG Owns" width={48} height={48} />
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 900, fontSize: 26, color: C.text, letterSpacing: "-0.03em", lineHeight: 1 }}>
+          PG <em style={{ fontStyle: "italic", fontWeight: 400 }}>Owns</em>
         </div>
       </Link>
 
       <div style={{ display: "flex", gap: 36, alignItems: "center" }}>
-        {[["Listings", "/tenant/search"], ["Tenants", "/tenant/search"], ["Owners", "/owner/listings"]].map(([label, href]) => (
+        {[["Find PGs", "/tenant/search"], ["My Bookings", "/tenant/bookings"], ["My Deposit", "/tenant/deposit"]].map(([label, href]) => (
           <Link key={label} href={href} style={{ fontSize: 13, fontWeight: 500, color: C.textDim, textDecoration: "none", transition: "color .2s", letterSpacing: "0.01em" }}
             onMouseEnter={e => (e.currentTarget.style.color = C.text)}
             onMouseLeave={e => (e.currentTarget.style.color = C.textDim)}
@@ -180,9 +179,7 @@ function ListingCard({ listing, delay = 0 }: { listing: typeof LISTINGS[0]; dela
 // ── Main page ──────────────────────────────────────────────────
 export default function HomePage() {
   const [scrollY, setScrollY] = useState(0);
-  const [searchArea, setSearchArea] = useState("Any area in Mumbai");
-  const [searchType, setSearchType] = useState("Single, Double, Triple…");
-  const [searchBudget, setSearchBudget] = useState("₹15,000");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY);
@@ -190,12 +187,11 @@ export default function HomePage() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const pigeonOpacity = Math.max(0, 0.7 * (1 - scrollY / (typeof window !== "undefined" ? window.innerHeight * 0.7 : 600)));
+
   const buildSearchUrl = () => {
-    const params = new URLSearchParams();
-    if (searchArea && searchArea !== "Any area in Mumbai") params.set("area", searchArea);
-    if (searchBudget && searchBudget !== "₹15,000") params.set("max_rent", searchBudget.replace(/[^\d]/g, ""));
-    const qs = params.toString();
-    return `/tenant/search${qs ? `?${qs}` : ""}`;
+    const qs = searchQuery.trim() ? `?q=${encodeURIComponent(searchQuery.trim())}` : "";
+    return `/tenant/search${qs}`;
   };
 
   return (
@@ -211,37 +207,44 @@ export default function HomePage() {
         <div style={{ position: "absolute", bottom: "5%", left: "20%", width: 560, height: 400, borderRadius: "50%", background: `radial-gradient(circle, ${C.iri3}10, transparent 65%)`, filter: "blur(100px)", pointerEvents: "none" }}/>
         <div style={{ position: "absolute", top: "18%", left: "-5%", width: 480, height: 480, borderRadius: "50%", background: `radial-gradient(circle, ${C.iri4}0d, transparent 65%)`, filter: "blur(80px)", pointerEvents: "none" }}/>
 
-        <div style={{ position: "relative", zIndex: 5, maxWidth: 720, width: "100%" }}>
+        {/* Glass pigeon — fixed, fades out as hero exits */}
+        <div style={{
+          position: "fixed", left: "50%", top: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "100vw", height: "100vw",
+          opacity: pigeonOpacity,
+          pointerEvents: "none",
+          zIndex: 0,
+          maskImage: "radial-gradient(ellipse 55% 55% at center, black 35%, transparent 72%)",
+          WebkitMaskImage: "radial-gradient(ellipse 55% 55% at center, black 35%, transparent 72%)",
+          transition: "opacity 0.1s linear",
+        }}>
+          <Image src="/glass-pigeon.png" alt="" fill style={{ objectFit: "contain" }} />
+        </div>
+
+        <div style={{ position: "relative", zIndex: 10, maxWidth: 720, width: "100%" }}>
           {/* Eyebrow */}
           <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 32, padding: "8px 20px", borderRadius: 99, background: "rgba(255,255,255,0.7)", border: `1px solid ${C.border}`, backdropFilter: "blur(12px)" }}>
             <span style={{ width: 24, height: 1.5, background: C.grad, borderRadius: 99, display: "inline-block" }}/>
-            <span style={{ fontSize: 10, color: C.iri2, letterSpacing: "0.32em", textTransform: "uppercase", fontWeight: 700 }}>
+            <span style={{ fontSize: 10, color: "#1a5fa8", letterSpacing: "0.32em", textTransform: "uppercase", fontWeight: 700 }}>
               Mumbai&apos;s most loved PG platform
             </span>
           </div>
 
           {/* Subtext */}
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 18, lineHeight: 1.7, color: C.textDim, maxWidth: 540, margin: "0 auto 52px", fontWeight: 400 }}>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 20, lineHeight: 1.7, color: C.textDim, maxWidth: 540, margin: "0 auto 52px", fontWeight: 500 }}>
             We help you find yours. Verified Mumbai PGs with transparent pricing, real photos, and a deposit you can actually see.
           </p>
 
           {/* Search bar */}
-          <div style={{ display: "flex", alignItems: "stretch", maxWidth: 860, margin: "0 auto 48px", padding: 6, borderRadius: 99, background: "rgba(255,255,255,0.88)", backdropFilter: "blur(20px) saturate(160%)", border: `1px solid ${C.border}`, boxShadow: "0 8px 40px rgba(20,23,43,0.1), 0 2px 8px rgba(20,23,43,0.06)" }}>
-            {[
-              ["Where", searchArea, setSearchArea, "Any area in Mumbai"],
-              ["Sharing type", searchType, setSearchType, "Single, Double, Triple…"],
-              ["Max budget", searchBudget, setSearchBudget, "₹15,000"],
-            ].map(([label, value, setValue, placeholder], i, arr) => (
-              <div key={label as string} style={{ flex: 1, padding: "13px 22px", borderRight: i < arr.length - 1 ? `1px solid ${C.border}` : "none", textAlign: "left" }}>
-                <div style={{ fontSize: 8, color: C.textMute, letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 4, fontWeight: 700 }}>{label as string}</div>
-                <input
-                  value={value as string}
-                  onChange={e => (setValue as React.Dispatch<React.SetStateAction<string>>)(e.target.value)}
-                  onFocus={e => { if (e.target.value === placeholder) (setValue as React.Dispatch<React.SetStateAction<string>>)(""); }}
-                  style={{ fontSize: 13, color: C.text, fontFamily: "var(--font-body)", fontWeight: 500, background: "transparent", border: "none", outline: "none", width: "100%" }}
-                />
-              </div>
-            ))}
+          <div style={{ display: "flex", alignItems: "center", maxWidth: 600, margin: "0 auto 48px", padding: 6, borderRadius: 99, background: "rgba(255,255,255,0.52)", backdropFilter: "blur(32px) saturate(180%)", WebkitBackdropFilter: "blur(32px) saturate(180%)", border: "1px solid rgba(255,255,255,0.75)", boxShadow: "0 8px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)" }}>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") window.location.href = buildSearchUrl(); }}
+              placeholder="Search by area, locality, or PG name…"
+              style={{ flex: 1, padding: "13px 22px", fontSize: 14, color: C.text, fontFamily: "var(--font-body)", fontWeight: 500, background: "transparent", border: "none", outline: "none" }}
+            />
             <Magnetic strength={0.2}>
               <Link href={buildSearchUrl()} style={{
                 background: C.grad, color: "#fff", fontSize: 13, fontWeight: 700,
@@ -262,7 +265,7 @@ export default function HomePage() {
               { icon: Zap,         label: "Secure Payments" },
               { icon: Star,        label: "Elite Community" },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: C.textMute, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 600 }}>
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: C.textDim, letterSpacing: "0.14em", textTransform: "uppercase", fontWeight: 700 }}>
                 <Icon style={{ width: 14, height: 14, color: C.iri2 }} />
                 {label}
               </div>
@@ -275,17 +278,12 @@ export default function HomePage() {
           {[["1,200+", "verified roosts"], ["8,400+", "happy tenants"], ["₹0", "hidden fees"]].map(([n, l]) => (
             <div key={l} style={{ textAlign: "center" }}>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 38, fontWeight: 800, letterSpacing: "-0.03em", background: C.grad, WebkitBackgroundClip: "text", backgroundClip: "text", WebkitTextFillColor: "transparent" }}>{n}</div>
-              <div style={{ fontSize: 10, color: C.textMute, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 4 }}>{l}</div>
+              <div style={{ fontSize: 11, color: C.textDim, letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 4, fontWeight: 600 }}>{l}</div>
             </div>
           ))}
         </div>
 
-        {/* Scroll indicator */}
-        <div style={{ position: "absolute", bottom: 36, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 9, color: C.textMute, letterSpacing: "0.24em", textTransform: "uppercase" }}>Scroll</span>
-          <div style={{ width: 1, height: 40, background: `linear-gradient(180deg, ${C.iri2}50, transparent)`, animation: "scrollLine 2s ease-in-out infinite" }}/>
-        </div>
-        <style>{`@keyframes scrollLine{0%,100%{opacity:.3;transform:scaleY(1)}50%{opacity:.9;transform:scaleY(1.15)}}`}</style>
+        
       </section>
 
       {/* ── FEATURED LISTINGS ──────────────────────────────────── */}

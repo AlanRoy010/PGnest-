@@ -16,16 +16,16 @@ const NAV_ITEMS = [
 ];
 
 const D = {
-  bg:        "#0a0c18",
-  sidebar:   "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))",
-  border:    "rgba(255,255,255,0.08)",
-  text:      "#e8ecf4",
-  textDim:   "rgba(241,243,249,0.62)",
-  textMute:  "rgba(241,243,249,0.38)",
-  activeNav: "linear-gradient(120deg, rgba(167,139,250,0.15), rgba(96,165,250,0.08))",
-  activeBdr: "rgba(96,165,250,0.27)",
+  bg:        "#EEEEEE",
+  sidebar:   "rgba(255,255,255,0.55)",
+  border:    "rgba(0,0,0,0.07)",
+  text:      "#0e1120",
+  textDim:   "rgba(10,12,28,0.75)",
+  textMute:  "rgba(10,12,28,0.45)",
+  activeNav: "rgba(255,255,255,0.88)",
+  activeBdr: "rgba(167,139,250,0.45)",
   gradient:  "linear-gradient(120deg, #a78bfa, #60a5fa, #34d399)",
-  iris:      "#60a5fa",
+  iris:      "#7c6af4",
 };
 
 const IriLogo = () => (
@@ -73,7 +73,12 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
   };
 
   const Sidebar = () => (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: D.sidebar, borderRight: `1px solid ${D.border}` }}>
+    <div style={{
+      display: "flex", flexDirection: "column", height: "100%",
+      background: D.sidebar, borderRight: `1px solid ${D.border}`,
+      backdropFilter: "blur(32px) saturate(180%)",
+      WebkitBackdropFilter: "blur(32px) saturate(180%)",
+    }}>
       <div style={{ padding: "24px 20px 20px", borderBottom: `1px solid ${D.border}` }}>
         <Link href="/"><IriLogo /></Link>
       </div>
@@ -98,6 +103,7 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
                   background: active ? D.activeNav : "transparent",
                   border: active ? `1px solid ${D.activeBdr}` : "1px solid transparent",
                   color: active ? D.text : D.textDim,
+                  boxShadow: active ? "0 2px 12px rgba(167,139,250,0.15)" : "none",
                 }}
               >
                 <item.icon style={{ width: 15, height: 15, flexShrink: 0, color: active ? D.iris : "inherit" }} />
@@ -138,12 +144,12 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div className="w-56 h-full shadow-xl"><Sidebar /></div>
-          <div className="flex-1" style={{ background: "rgba(0,0,0,0.6)" }} onClick={() => setMobileOpen(false)} />
+          <div className="flex-1" style={{ background: "rgba(0,0,0,0.3)" }} onClick={() => setMobileOpen(false)} />
         </div>
       )}
 
       <div className="flex-1 md:ml-56 flex flex-col min-h-screen">
-        <div className="md:hidden flex items-center justify-between px-4 py-3" style={{ background: "rgba(10,12,24,0.8)", borderBottom: `1px solid ${D.border}`, backdropFilter: "blur(12px)" }}>
+        <div className="md:hidden flex items-center justify-between px-4 py-3" style={{ background: "rgba(238,238,238,0.72)", borderBottom: `1px solid ${D.border}`, backdropFilter: "blur(20px)" }}>
           <Link href="/"><IriLogo /></Link>
           <button onClick={() => setMobileOpen(true)} style={{ padding: 8, color: D.textDim, background: "none", border: "none", cursor: "pointer" }}>
             <Menu style={{ width: 20, height: 20 }} />
@@ -153,15 +159,15 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
       </div>
 
       {showSignOutModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.6)" }}>
-          <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))", border: `1px solid ${D.border}`, borderRadius: 20, padding: 28, width: "100%", maxWidth: 360, backdropFilter: "blur(20px)" }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.25)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-              <LogOut style={{ width: 18, height: 18, color: "#f87171" }} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.3)" }}>
+          <div style={{ background: "rgba(255,255,255,0.85)", border: `1px solid ${D.border}`, borderRadius: 20, padding: 28, width: "100%", maxWidth: 360, backdropFilter: "blur(32px)", boxShadow: "0 20px 60px rgba(0,0,0,0.12)" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+              <LogOut style={{ width: 18, height: 18, color: "#ef4444" }} />
             </div>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: D.text, marginBottom: 6 }}>Sign out?</h2>
             <p style={{ fontSize: 14, color: D.textDim, marginBottom: 24 }}>You&apos;ll need to sign in again to access your dashboard.</p>
             <div style={{ display: "flex", gap: 12 }}>
-              <button onClick={() => setShowSignOutModal(false)} style={{ flex: 1, padding: "10px 0", borderRadius: 99, border: `1px solid ${D.border}`, color: D.textDim, background: "none", cursor: "pointer", fontSize: 13 }}>
+              <button onClick={() => setShowSignOutModal(false)} style={{ flex: 1, padding: "10px 0", borderRadius: 99, border: `1px solid ${D.border}`, color: D.textDim, background: "rgba(255,255,255,0.6)", cursor: "pointer", fontSize: 13 }}>
                 Cancel
               </button>
               <button onClick={confirmSignOut} style={{ flex: 1, padding: "10px 0", borderRadius: 99, background: "linear-gradient(120deg, #ef4444, #dc2626)", color: "#fff", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
