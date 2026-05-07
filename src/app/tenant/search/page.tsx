@@ -4,15 +4,32 @@ import { Suspense, useState, useEffect, useCallback, useMemo, useRef } from "rea
 import { createClient } from "@/lib/supabase/client";
 import { formatCurrency, AMENITY_LABELS, AREAS_MUMBAI } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
-import {
-  Search, MapPin, X, SlidersHorizontal, AlertCircle,
-} from "lucide-react";
+import { Search, MapPin, X, SlidersHorizontal, AlertCircle } from "lucide-react";
 import type { Listing } from "@/types";
 import Link from "next/link";
 import PigeonLoader from "@/components/shared/PigeonLoader";
 import { TiltCard } from "@/components/FeatherFX";
 
-// Inner component uses useSearchParams — must be inside <Suspense>
+const D = {
+  card:     "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+  border:   "rgba(255,255,255,0.08)",
+  text:     "#e8ecf4",
+  textDim:  "rgba(241,243,249,0.62)",
+  textMute: "rgba(241,243,249,0.38)",
+  iris:     "#60a5fa",
+  gradient: "linear-gradient(120deg, #a78bfa, #60a5fa, #34d399)",
+  input:    "rgba(255,255,255,0.04)",
+};
+
+const PHOTO_GRADIENTS = [
+  "linear-gradient(135deg, hsla(250,80%,40%,0.7), hsla(250,80%,25%,0.4)), #171a2e",
+  "linear-gradient(135deg, hsla(320,70%,40%,0.7), hsla(320,70%,25%,0.4)), #171a2e",
+  "linear-gradient(135deg, hsla(170,60%,40%,0.7), hsla(170,60%,25%,0.4)), #171a2e",
+  "linear-gradient(135deg, hsla(30,60%,40%,0.7),  hsla(30,60%,25%,0.4)),  #171a2e",
+  "linear-gradient(135deg, hsla(290,65%,40%,0.7), hsla(290,65%,25%,0.4)), #171a2e",
+  "linear-gradient(135deg, hsla(200,70%,40%,0.7), hsla(200,70%,25%,0.4)), #171a2e",
+];
+
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const supabase = useMemo(() => createClient(), []);
@@ -22,7 +39,6 @@ function SearchPageContent() {
   const [fetchError, setFetchError] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Initialize from URL params so homepage search bar works
   const [area, setArea] = useState(searchParams.get("area") || "");
   const [minRent, setMinRent] = useState("");
   const [maxRent, setMaxRent] = useState(searchParams.get("max_rent") || "");
@@ -30,7 +46,6 @@ function SearchPageContent() {
   const [furnishing, setFurnishing] = useState("");
   const [roomType, setRoomType] = useState(searchParams.get("room_type") || "");
 
-  // Debounced filter values — fetch only fires 400ms after the user stops typing
   const [debouncedArea, setDebouncedArea] = useState(area);
   const [debouncedMinRent, setDebouncedMinRent] = useState(minRent);
   const [debouncedMaxRent, setDebouncedMaxRent] = useState(maxRent);
@@ -50,7 +65,6 @@ function SearchPageContent() {
   const fetchListings = useCallback(async () => {
     setLoading(true);
     setFetchError(false);
-    // 15-second timeout — handles cold Supabase project wakeup
     const timeout = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error("timeout")), 15000)
     );
@@ -61,21 +75,17 @@ function SearchPageContent() {
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      if (debouncedArea)     query = query.ilike("area", `%${debouncedArea}%`);
-      if (debouncedMinRent)  query = query.gte("monthly_rent", Number(debouncedMinRent));
-      if (debouncedMaxRent)  query = query.lte("monthly_rent", Number(debouncedMaxRent));
-      if (gender)            query = query.in("gender_preference", [gender, "any"]);
-      if (furnishing)        query = query.eq("furnishing", furnishing);
-      if (roomType)          query = query.eq("room_type", roomType);
+      if (debouncedArea)    query = query.ilike("area", `%${debouncedArea}%`);
+      if (debouncedMinRent) query = query.gte("monthly_rent", Number(debouncedMinRent));
+      if (debouncedMaxRent) query = query.lte("monthly_rent", Number(debouncedMaxRent));
+      if (gender)           query = query.in("gender_preference", [gender, "any"]);
+      if (furnishing)       query = query.eq("furnishing", furnishing);
+      if (roomType)         query = query.eq("room_type", roomType);
 
       const { data, error } = await Promise.race([query, timeout]);
-      if (error) {
-        console.error("Listings fetch error:", error.message);
-        setFetchError(true);
-      }
+      if (error) { setFetchError(true); }
       setListings(data || []);
-    } catch (err) {
-      console.error("Listings fetch failed:", err);
+    } catch {
       setFetchError(true);
       setListings([]);
     } finally {
@@ -83,275 +93,222 @@ function SearchPageContent() {
     }
   }, [supabase, debouncedArea, debouncedMinRent, debouncedMaxRent, gender, furnishing, roomType]);
 
-  useEffect(() => {
-    fetchListings();
-  }, [fetchListings]);
+  useEffect(() => { fetchListings(); }, [fetchListings]);
 
   const clearFilters = () => {
-    setArea("");
-    setMinRent("");
-    setMaxRent("");
-    setGender("");
-    setFurnishing("");
-    setRoomType("");
+    setArea(""); setMinRent(""); setMaxRent("");
+    setGender(""); setFurnishing(""); setRoomType("");
   };
 
-  const activeFilterCount = [area, minRent, maxRent, gender, furnishing, roomType]
-    .filter(Boolean).length;
+  const activeFilterCount = [area, minRent, maxRent, gender, furnishing, roomType].filter(Boolean).length;
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div style={{ maxWidth: 1100, margin: "0 auto" }}>
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="font-display text-2xl font-bold text-[#2C3040]">
-          Find PGs in Mumbai
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 11, color: D.iris, letterSpacing: "0.32em", textTransform: "uppercase", fontWeight: 600, marginBottom: 10 }}>Browse roosts</div>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 42, fontWeight: 800, color: D.text, letterSpacing: "-0.03em", lineHeight: 1 }}>
+          {loading ? (
+            "Finding nests…"
+          ) : (
+            <>
+              <span style={{ background: D.gradient, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{listings.length}</span>
+              {" "}place{listings.length !== 1 ? "s" : ""} to roost in Mumbai
+            </>
+          )}
         </h1>
-        <p className="text-sm text-[#7A7A8A] mt-0.5">
-          {loading ? "Searching…" : `${listings.length} listing${listings.length !== 1 ? "s" : ""} found`}
-        </p>
       </div>
 
-      {/* Search + Filter bar */}
-      <div className="flex gap-3 mb-6">
-        <div className="flex-1 flex items-center gap-3 bg-[#FDFBF8] border border-[#E2DDD6] rounded-xl px-4 py-3 shadow-sm focus-within:border-[#E8734A] focus-within:ring-2 focus-within:ring-[#E8734A]/15 transition-all">
-          <MapPin className="w-4 h-4 text-[#A09488] flex-shrink-0" />
+      {/* Search bar */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 12, background: D.input, border: `1px solid ${D.border}`, borderRadius: 14, padding: "12px 16px" }}>
+          <MapPin style={{ width: 16, height: 16, color: D.textMute, flexShrink: 0 }} />
           <input
             type="text"
             value={area}
             onChange={(e) => setArea(e.target.value)}
-            placeholder="Search by area — Andheri, Bandra, Powai..."
-            className="flex-1 text-sm bg-transparent outline-none text-[#2C3040] placeholder:text-[#A09488]"
+            placeholder="Search by area — Andheri, Bandra, Powai…"
+            style={{ flex: 1, fontSize: 14, background: "transparent", border: "none", outline: "none", color: D.text }}
           />
           {area && (
-            <button onClick={() => setArea("")} className="text-[#A09488] hover:text-[#5C5450]">
-              <X className="w-4 h-4" />
+            <button onClick={() => setArea("")} style={{ background: "none", border: "none", cursor: "pointer", color: D.textMute }}>
+              <X style={{ width: 15, height: 15 }} />
             </button>
           )}
         </div>
 
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
-            showFilters || activeFilterCount > 0
-              ? "bg-[#FDF0EB] border-[#E8734A] text-[#C5522E]"
-              : "bg-[#FDFBF8] border-[#E2DDD6] text-[#5C5450] hover:border-[#B8C4D8]"
-          }`}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "12px 18px", borderRadius: 14, fontSize: 13, fontWeight: 500, cursor: "pointer",
+            background: showFilters || activeFilterCount > 0
+              ? "linear-gradient(120deg, rgba(167,139,250,0.15), rgba(96,165,250,0.08))"
+              : D.input,
+            border: showFilters || activeFilterCount > 0
+              ? "1px solid rgba(96,165,250,0.27)"
+              : `1px solid ${D.border}`,
+            color: showFilters || activeFilterCount > 0 ? D.iris : D.textDim,
+          }}
         >
-          <SlidersHorizontal className="w-4 h-4" />
+          <SlidersHorizontal style={{ width: 15, height: 15 }} />
           Filters
           {activeFilterCount > 0 && (
-            <span className="bg-[#E8734A] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+            <span style={{ background: D.gradient, color: "#0a0c18", fontSize: 11, fontWeight: 700, width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {activeFilterCount}
             </span>
           )}
         </button>
       </div>
 
+      {/* Area chips */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 28, flexWrap: "wrap" }}>
+        {["All Mumbai", "Andheri West", "Bandra", "Powai", "Malad", "Goregaon", "Dadar"].map((chip) => {
+          const isAll = chip === "All Mumbai";
+          const isActive = isAll ? !area : area.toLowerCase() === chip.toLowerCase();
+          return (
+            <button
+              key={chip}
+              onClick={() => setArea(isAll ? "" : chip)}
+              style={{
+                padding: "8px 20px", borderRadius: 99, fontSize: 12, cursor: "pointer",
+                border: isActive ? "1px solid rgba(96,165,250,0.5)" : `1px solid ${D.border}`,
+                background: isActive ? "linear-gradient(120deg, rgba(167,139,250,0.2), rgba(96,165,250,0.15))" : "transparent",
+                color: isActive ? D.text : D.textDim,
+                fontWeight: isActive ? 500 : 400,
+              }}
+            >
+              {chip}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Filters panel */}
       {showFilters && (
-        <div className="feather-card p-5 mb-6 animate-fade-up">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-medium text-[#2C3040] text-sm">Filters</h3>
+        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 20, padding: 24, marginBottom: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: D.text }}>Filters</span>
             {activeFilterCount > 0 && (
-              <button
-                onClick={clearFilters}
-                className="text-xs text-[#E8734A] hover:text-[#C5522E] font-medium transition-colors"
-              >
-                Clear all
-              </button>
+              <button onClick={clearFilters} style={{ fontSize: 12, color: D.iris, background: "none", border: "none", cursor: "pointer" }}>Clear all</button>
             )}
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-[#5C5450] mb-1.5">Area</label>
-              <select value={area} onChange={(e) => setArea(e.target.value)} className={selectCls}>
-                <option value="">All areas</option>
-                {AREAS_MUMBAI.map((a) => (
-                  <option key={a} value={a}>{a}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-[#5C5450] mb-1.5">Min rent (₹)</label>
-              <input
-                type="number"
-                value={minRent}
-                onChange={(e) => setMinRent(e.target.value)}
-                placeholder="e.g. 5000"
-                className={selectCls}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-[#5C5450] mb-1.5">Max rent (₹)</label>
-              <input
-                type="number"
-                value={maxRent}
-                onChange={(e) => setMaxRent(e.target.value)}
-                placeholder="e.g. 20000"
-                className={selectCls}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-[#5C5450] mb-1.5">Gender</label>
-              <select value={gender} onChange={(e) => setGender(e.target.value)} className={selectCls}>
-                <option value="">Any</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-[#5C5450] mb-1.5">Furnishing</label>
-              <select value={furnishing} onChange={(e) => setFurnishing(e.target.value)} className={selectCls}>
-                <option value="">Any</option>
-                <option value="furnished">Furnished</option>
-                <option value="semi-furnished">Semi-furnished</option>
-                <option value="unfurnished">Unfurnished</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-[#5C5450] mb-1.5">Room type</label>
-              <select value={roomType} onChange={(e) => setRoomType(e.target.value)} className={selectCls}>
-                <option value="">Any</option>
-                <option value="single">Single</option>
-                <option value="double">Double sharing</option>
-                <option value="triple">Triple sharing</option>
-                <option value="dormitory">Dormitory</option>
-              </select>
-            </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            {[
+              { label: "Area", type: "select", value: area, onChange: setArea, options: [{ v: "", l: "All areas" }, ...AREAS_MUMBAI.map(a => ({ v: a, l: a }))] },
+              { label: "Min rent (₹)", type: "number", value: minRent, onChange: setMinRent, placeholder: "e.g. 5000" },
+              { label: "Max rent (₹)", type: "number", value: maxRent, onChange: setMaxRent, placeholder: "e.g. 20000" },
+              { label: "Gender", type: "select", value: gender, onChange: setGender, options: [{ v: "", l: "Any" }, { v: "male", l: "Male" }, { v: "female", l: "Female" }] },
+              { label: "Furnishing", type: "select", value: furnishing, onChange: setFurnishing, options: [{ v: "", l: "Any" }, { v: "furnished", l: "Furnished" }, { v: "semi-furnished", l: "Semi-furnished" }, { v: "unfurnished", l: "Unfurnished" }] },
+              { label: "Room type", type: "select", value: roomType, onChange: setRoomType, options: [{ v: "", l: "Any" }, { v: "single", l: "Single" }, { v: "double", l: "Double" }, { v: "triple", l: "Triple" }, { v: "dormitory", l: "Dormitory" }] },
+            ].map(({ label, type, value, onChange, options, placeholder }: {
+              label: string; type: string; value: string;
+              onChange: (v: string) => void;
+              options?: { v: string; l: string }[];
+              placeholder?: string;
+            }) => (
+              <div key={label}>
+                <div style={{ fontSize: 10, color: D.textMute, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 8, fontWeight: 600 }}>{label}</div>
+                {type === "select" && options ? (
+                  <select value={value} onChange={(e) => onChange(e.target.value)} style={inputSt}>
+                    {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                  </select>
+                ) : (
+                  <input type="number" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={inputSt} />
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* Loading */}
       {loading && (
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 240, gap: 16 }}>
           <PigeonLoader size="md" />
-          <p className="text-sm text-[#A09488]">Finding your perfect nest…</p>
+          <p style={{ fontSize: 14, color: D.textMute }}>Finding your perfect nest…</p>
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error */}
       {!loading && fetchError && (
-        <div className="feather-card text-center py-16 px-8">
-          <AlertCircle className="w-10 h-10 text-[#E8734A] mx-auto mb-4" />
-          <h3 className="font-display font-bold text-[#2C3040] mb-1">
-            Couldn&apos;t load listings
-          </h3>
-          <p className="text-sm text-[#7A7A8A] mb-5">
-            Your database may be waking up — this can take ~30 seconds on the free tier.
-          </p>
-          <button onClick={fetchListings} className="feather-btn mx-auto text-sm">
+        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 20, padding: "48px 32px", textAlign: "center" }}>
+          <AlertCircle style={{ width: 40, height: 40, color: "#f472b6", margin: "0 auto 16px" }} />
+          <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: D.text, marginBottom: 8 }}>Couldn&apos;t load listings</h3>
+          <p style={{ fontSize: 14, color: D.textDim, marginBottom: 20 }}>Your database may be waking up — this can take ~30 seconds on the free tier.</p>
+          <button onClick={fetchListings} style={{ padding: "11px 28px", borderRadius: 99, background: D.gradient, color: "#0a0c18", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}>
             Try again
           </button>
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty */}
       {!loading && !fetchError && listings.length === 0 && (
-        <div className="feather-card text-center py-20 px-8">
-          <Search className="w-10 h-10 text-[#C4BAB0] mx-auto mb-4" />
-          <h3 className="font-display font-bold text-[#2C3040] mb-1">
-            No listings found
-          </h3>
-          <p className="text-sm text-[#7A7A8A] mb-4">
-            Try adjusting your filters or searching a different area
-          </p>
+        <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 20, padding: "64px 32px", textAlign: "center" }}>
+          <Search style={{ width: 40, height: 40, color: D.textMute, margin: "0 auto 16px" }} />
+          <h3 style={{ fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 700, color: D.text, marginBottom: 8 }}>No listings found</h3>
+          <p style={{ fontSize: 14, color: D.textDim, marginBottom: 20 }}>Try adjusting your filters or searching a different area</p>
           {activeFilterCount > 0 && (
-            <button
-              onClick={clearFilters}
-              className="feather-btn mx-auto text-sm"
-            >
+            <button onClick={clearFilters} style={{ padding: "11px 28px", borderRadius: 99, background: D.gradient, color: "#0a0c18", fontSize: 13, fontWeight: 700, border: "none", cursor: "pointer" }}>
               Clear all filters
             </button>
           )}
         </div>
       )}
 
-      {/* Listings grid */}
+      {/* Grid */}
       {!loading && !fetchError && listings.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-4 stagger">
-          {listings.map((listing) => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+          {listings.map((listing, idx) => (
             <TiltCard key={listing.id}>
-            <Link
-              href={`/tenant/listing/${listing.id}`}
-              className="pg-card feather-card overflow-hidden group block"
-            >
-              {/* Photo */}
-              <div className="h-48 bg-gradient-to-br from-[#F5C4B0] to-[#F0A882] relative overflow-hidden">
-                {listing.photos[0] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={listing.photos[0]}
-                    alt={listing.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <MapPin className="w-8 h-8 text-[#C5522E] opacity-40" />
-                  </div>
-                )}
-                {listing.gender_preference !== "any" && (
-                  <span className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-xs font-medium px-2.5 py-1 rounded-full text-[#2C3040]">
-                    {listing.gender_preference === "male" ? "👨 Male only" : "👩 Female only"}
-                  </span>
-                )}
-                <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm text-xs font-medium px-2.5 py-1 rounded-full text-[#2C3040] capitalize">
-                  {listing.room_type}
-                </span>
-              </div>
-
-              {/* Content */}
-              <div className="p-4">
-                <h3 className="font-display font-bold text-[#2C3040] mb-1 line-clamp-1">
-                  {listing.title}
-                </h3>
-                <div className="flex items-center gap-1 text-xs text-[#A09488] mb-3">
-                  <MapPin className="w-3 h-3" />
-                  {listing.area}, Mumbai
-                </div>
-
-                {listing.amenities.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {listing.amenities.slice(0, 4).map((a) => (
-                      <span
-                        key={a}
-                        className="text-xs bg-[#F0F3F8] text-[#4A5A7A] px-2 py-0.5 rounded-md font-medium"
-                      >
-                        {AMENITY_LABELS[a] || a}
-                      </span>
-                    ))}
-                    {listing.amenities.length > 4 && (
-                      <span className="text-xs text-[#A09488]">
-                        +{listing.amenities.length - 4} more
-                      </span>
+              <Link href={`/tenant/listing/${listing.id}`} style={{ textDecoration: "none", display: "block" }}>
+                <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 20, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.4)", transition: "border-color 0.2s", cursor: "pointer" }}>
+                  {/* Photo */}
+                  <div style={{ height: 160, background: listing.photos[0] ? undefined : PHOTO_GRADIENTS[idx % PHOTO_GRADIENTS.length], position: "relative", overflow: "hidden" }}>
+                    {listing.photos[0] ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={listing.photos[0]} alt={listing.title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <MapPin style={{ width: 28, height: 28, color: "rgba(255,255,255,0.3)" }} />
+                      </div>
                     )}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-3 border-t border-[#E2DDD6]">
-                  <div>
-                    <span className="font-display text-lg font-bold text-[#E8734A]">
-                      {formatCurrency(listing.monthly_rent)}
+                    <span style={{ position: "absolute", top: 12, left: 12, padding: "5px 10px", borderRadius: 99, background: "rgba(0,0,0,0.5)", border: "1px solid rgba(96,165,250,0.4)", color: D.iris, fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                      ● Verified
                     </span>
-                    <span className="text-xs text-[#7A7A8A]">/month</span>
+                    <span style={{ position: "absolute", top: 12, right: 12, padding: "5px 10px", borderRadius: 99, background: "rgba(0,0,0,0.5)", border: `1px solid ${D.border}`, color: D.textDim, fontSize: 9, textTransform: "capitalize" }}>
+                      {listing.room_type}
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <div className="text-xs text-[#7A7A8A]">
-                      {listing.rooms_available} room{listing.rooms_available !== 1 ? "s" : ""} left
-                    </div>
-                    <div className="text-xs text-[#A09488] capitalize">
-                      {listing.furnishing}
+
+                  {/* Content */}
+                  <div style={{ padding: 20 }}>
+                    <div style={{ fontSize: 10, color: D.textMute, letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 6 }}>{listing.area}</div>
+                    <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 700, color: D.text, marginBottom: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{listing.title}</div>
+
+                    {listing.amenities.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+                        {listing.amenities.slice(0, 3).map((a) => (
+                          <span key={a} style={{ fontSize: 10, padding: "3px 10px", borderRadius: 99, background: "rgba(96,165,250,0.1)", border: "1px solid rgba(96,165,250,0.2)", color: D.iris }}>
+                            {AMENITY_LABELS[a] || a}
+                          </span>
+                        ))}
+                        {listing.amenities.length > 3 && (
+                          <span style={{ fontSize: 10, color: D.textMute }}>+{listing.amenities.length - 3}</span>
+                        )}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 12, borderTop: `1px solid ${D.border}` }}>
+                      <div>
+                        <span style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 800, color: D.text }}>{formatCurrency(listing.monthly_rent)}</span>
+                        <span style={{ fontSize: 11, color: D.textMute }}>/mo</span>
+                      </div>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", color: D.text, fontSize: 14 }}>→</div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
             </TiltCard>
           ))}
         </div>
@@ -360,14 +317,13 @@ function SearchPageContent() {
   );
 }
 
-// Suspense wrapper required by Next.js 14 for useSearchParams
 export default function TenantSearchPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 240, gap: 16 }}>
           <PigeonLoader size="md" />
-          <p className="text-sm text-[#A09488]">Finding your perfect nest…</p>
+          <p style={{ fontSize: 14, color: "rgba(241,243,249,0.38)" }}>Finding your perfect nest…</p>
         </div>
       }
     >
@@ -376,4 +332,7 @@ export default function TenantSearchPage() {
   );
 }
 
-const selectCls = "w-full border border-[#E2DDD6] rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#E8734A] focus:ring-2 focus:ring-[#E8734A]/15 transition-all bg-[#FDFBF8] text-[#2C3040]";
+const inputSt: React.CSSProperties = {
+  width: "100%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: 12, padding: "10px 14px", fontSize: 13, outline: "none", color: "#e8ecf4",
+};
