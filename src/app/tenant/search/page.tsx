@@ -98,7 +98,7 @@ function SearchPageContent() {
       if (selectedTypes.length > 0) query = query.in("room_type", selectedTypes);
 
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("timeout")), 15000)
+        setTimeout(() => reject(new Error("timeout")), 30000)
       );
       const { data, error } = await Promise.race([query, timeout]);
       if (error) { setFetchError(true); }
@@ -124,7 +124,7 @@ function SearchPageContent() {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 40px 80px" }}>
+    <div style={{ padding: "32px 40px 80px" }}>
 
       {/* ── Search bar ── */}
       <div style={{
