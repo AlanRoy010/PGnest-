@@ -105,7 +105,7 @@ function Nav({ scrolled }: { scrolled: boolean }) {
             display: "inline-block", letterSpacing: "0.04em", textTransform: "uppercase",
             boxShadow: "0 4px 20px rgba(20,23,43,0.18)",
           }}>
-            Host your space
+            Join Now
           </Link>
         </Magnetic>
       </div>
