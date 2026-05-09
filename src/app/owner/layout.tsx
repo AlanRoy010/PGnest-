@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { Home, BookOpen, Shield, LogOut, UserCircle, Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, BookOpen, LogOut, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
@@ -11,9 +11,8 @@ import { toast } from "sonner";
 import Image from "next/image";
 
 const NAV_ITEMS = [
-  { href: "/owner/listings", label: "My Listings", icon: Home },
-  { href: "/owner/bookings", label: "Bookings",    icon: BookOpen },
-  { href: "/owner/deposit",  label: "Deposits",    icon: Shield },
+  { href: "/owner/dashboard",  label: "Dashboard",    icon: LayoutDashboard },
+  { href: "/owner/bookings",   label: "Reservations", icon: BookOpen },
 ];
 
 const D = {
@@ -27,11 +26,11 @@ const D = {
 
 export default function OwnerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { profile, email, loading } = useUser();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);

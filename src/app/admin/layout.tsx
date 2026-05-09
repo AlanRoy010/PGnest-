@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Home, BookOpen, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, BookOpen, LogOut, Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useUser } from "@/hooks/useUser";
@@ -12,7 +12,6 @@ import Image from "next/image";
 
 const NAV_ITEMS = [
   { href: "/admin/dashboard",    label: "Dashboard",    icon: LayoutDashboard },
-  { href: "/admin/listings",     label: "Listings",     icon: Home },
   { href: "/admin/reservations", label: "Reservations", icon: BookOpen },
 ];
 
