@@ -28,7 +28,7 @@ const D = {
 export default function OwnerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { profile, email } = useUser();
+  const { profile, email, loading } = useUser();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
@@ -101,9 +101,9 @@ export default function OwnerLayout({ children }: { children: React.ReactNode })
         <div className="hidden md:flex" style={{ gap: 8, alignItems: "center" }}>
           <Link href="/owner/profile" style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 14px 6px 8px", borderRadius: 99, background: "rgba(255,255,255,0.7)", border: `1px solid ${D.border}`, textDecoration: "none", fontSize: 13, color: D.text, fontWeight: 500 }}>
             <div style={{ width: 26, height: 26, borderRadius: "50%", background: D.grad, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: "#fff" }}>
-              {profile?.full_name ? getInitials(profile.full_name) : email ? email[0].toUpperCase() : "O"}
+              {!loading && (profile?.full_name ? getInitials(profile.full_name) : email ? email[0].toUpperCase() : "·")}
             </div>
-            {profile?.full_name?.split(" ")[0] || email?.split("@")[0]}
+            {loading ? "" : profile?.full_name?.split(" ")[0] || email?.split("@")[0]}
           </Link>
           <button onClick={() => setShowSignOutModal(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 99, background: "none", border: `1px solid ${D.border}`, color: D.textDim, fontSize: 13, cursor: "pointer" }}>
             <LogOut style={{ width: 13, height: 13 }} /> Sign out
