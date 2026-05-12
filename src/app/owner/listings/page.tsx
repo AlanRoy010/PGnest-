@@ -309,7 +309,7 @@ export default function OwnerListingsPage() {
               <h2 className="font-display text-xl font-semibold text-[#1c1917]">
                 {editingId ? "Edit listing" : "New listing"}
               </h2>
-              <button onClick={() => setShowForm(false)} className="p-2 text-[#a8a29e] hover:text-[#1c1917] rounded-lg">
+              <button type="button" onClick={() => setShowForm(false)} className="w-9 h-9 flex items-center justify-center text-[#a8a29e] hover:text-[#1c1917] hover:bg-[#f5f5f4] rounded-lg transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -329,7 +329,7 @@ export default function OwnerListingsPage() {
                           <button
                             type="button"
                             onClick={() => removePhoto(url, i)}
-                            className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 rounded-full p-0.5 transition-colors"
+                            className="absolute top-1 right-1 bg-black/50 hover:bg-black/70 rounded-full p-1.5 transition-colors flex items-center justify-center"
                           >
                             <XCircle className="w-4 h-4 text-white" />
                           </button>
@@ -518,8 +518,8 @@ export default function OwnerListingsPage() {
                         {rule}
                         <button type="button"
                           onClick={() => setForm({ ...form, rules: form.rules.filter((_, j) => j !== i) })}
-                          className="text-[#a8a29e] hover:text-red-500 ml-1">
-                          ×
+                          className="ml-1 p-0.5 flex items-center justify-center text-[#a8a29e] hover:text-red-500 rounded transition-colors">
+                          <X className="w-3 h-3" />
                         </button>
                       </span>
                     ))}
